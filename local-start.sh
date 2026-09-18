@@ -25,4 +25,5 @@ if [[ ! -f "$project_root/.env" ]]; then
 fi
 echo 'Installing local requirements...'
 "$venv_python" -m pip install --disable-pip-version-check -r "$project_root/requirements.txt"
+"$venv_python" "$project_root/scripts/prepare_local.py"
 exec "$venv_python" "$project_root/scripts/local_server.py" start "$@"

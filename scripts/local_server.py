@@ -89,7 +89,7 @@ class Handler(SimpleHTTPRequestHandler):
     def send_head(self):
         path = unquote(urlsplit(self.path).path)
         target = Path(self.translate_path(self.path)).resolve()
-        public = (ROOT / 'dist').resolve()
+        public = (ROOT / 'build/modern-motion/browser').resolve()
         if any(part.startswith('.') for part in path.split('/') if part) or public not in target.parents and target != public:
             self.send_error(404)
             return None
@@ -107,7 +107,7 @@ class Handler(SimpleHTTPRequestHandler):
 
 def serve():
     state = read_state()
-    server = ThreadingHTTPServer(('127.0.0.1', state['port']), functools.partial(Handler, directory=str(ROOT / 'dist')))
+    server = ThreadingHTTPServer(('127.0.0.1', state['port']), functools.partial(Handler, directory=str(ROOT / 'build/modern-motion/browser')))
     server.token = state['token']
     try:
         server.serve_forever(poll_interval=0.1)
@@ -123,8 +123,8 @@ def start(no_browser):
         print(f"Already running: http://localhost:{state['port']}")
         return
     _, port = settings()
-    if not (ROOT / 'dist/index.html').is_file():
-        raise ValueError('Missing dist/index.html.')
+    if not (ROOT / 'build/modern-motion/browser/index.html').is_file():
+        raise ValueError('Missing Angular build. Run local-start to install dependencies and build.')
     # Bind before writing state to avoid touching a server already on this port.
     import socket
     with socket.socket() as probe:

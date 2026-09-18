@@ -27,6 +27,8 @@ if (-not (Test-Path (Join-Path $projectRoot '.env'))) {
 Write-Host 'Installing local requirements...'
 & $venvPython -m pip install --disable-pip-version-check -r (Join-Path $projectRoot 'requirements.txt')
 if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed. The website was not started.' }
+& $venvPython (Join-Path $projectRoot 'scripts/prepare_local.py')
+if ($LASTEXITCODE -ne 0) { throw 'Angular dependency installation or build failed.' }
 $startArguments = @((Join-Path $projectRoot 'scripts/local_server.py'), 'start')
 if ($NoBrowser) { $startArguments += '--no-browser' }
 & $venvPython @startArguments

@@ -8,3 +8,8 @@ node_modules/
 .local/
 __pycache__/
 *.pyc
+
+.angular/
+.pnpm-store/
+build/
+out-tsc/

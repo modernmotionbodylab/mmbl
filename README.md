@@ -1,88 +1,76 @@
 # Modern Motion Body Lab
 
-Black-and-white, responsive gym website. Plain HTML and CSS with no package dependencies or build step.
+Angular 22 website for busy professionals, nurses, executives, and frequent travelers. Navy, ivory, coral, and teal styling, full-color gym photography, and original-color social logos.
 
-## Run locally on macOS / zsh (recommended on this computer)
+## Local testing — macOS / zsh
 
-From the project folder:
+Install Python 3.9+ and Node.js 24 LTS (24.15+), then run from this folder:
 
 ```sh
 ./local-start.sh
 ./local-stop.sh
 ```
 
-Start creates or reuses `.venv`, installs `requirements.txt`, creates `.env` if needed, and opens http://localhost:4200. Python 3.9+ is required. Use `./local-start.sh --no-browser` to skip opening the browser. The server keeps running in the background until stopped. Both shell scripts work from other folders too when invoked by their full paths.
+Start creates/reuses `.venv`, checks Python requirements, installs Angular packages from the lockfile, builds the app, starts a background local server, and opens **http://localhost:4200**. Use `./local-start.sh --no-browser` to skip the browser. Python uses standard-library modules only. Node is required to compile Angular. The launcher uses pnpm if available or obtains pinned pnpm through npm.
 
-The `./` prefix tells zsh to run a file from the current folder. `.ps1` files require PowerShell and cannot be run directly by zsh; use these `.sh` scripts instead.
-
-## Run locally with PowerShell
-
-Prerequisites: Python 3.9+ with `venv`/`pip`, and PowerShell (Windows PowerShell 5.1 or PowerShell 7+). Node.js is not needed for this method.
-
-From PowerShell in the project folder:
+## Windows / PowerShell
 
 ```powershell
 .\local-start.ps1
-# Later, to stop the background server:
 .\local-stop.ps1
 ```
 
-On macOS/Linux with PowerShell installed:
+PowerShell scripts require PowerShell; use `.sh` files in macOS zsh. `-NoBrowser` skips opening the browser. Both launchers load `.env`, creating it from `.env.example` when missing. Defaults are `HOST=localhost` and `PORT=4200`. Configuration and runtime files are not published.
+
+The scripts serve the compiled Angular app. After editing source, rerun start to rebuild. For automatic refresh during development, first stop the background preview, then use:
 
 ```sh
-pwsh -File ./local-start.ps1
-pwsh -File ./local-stop.ps1
+npx --yes pnpm@11.19.0 install --frozen-lockfile
+npm start
 ```
 
-The start script creates or reuses `.venv`, installs `requirements.txt`, creates `.env` from `.env.example` if missing, starts the server in the background, and opens your browser. Use `./local-start.ps1 -NoBrowser` to skip opening the browser. Running start again reports the existing server instead of starting another copy. Your terminal can be closed while the server runs.
+Stop this foreground dev server with Ctrl+C. Do not run both servers on port 4200 simultaneously.
 
-The current Python server uses only standard-library modules, so `requirements.txt` intentionally has no third-party packages. No dependency downloads are currently needed. Python itself and PowerShell must already be installed.
+## Source structure
 
-The default address is http://localhost:4200. Configure `PORT` (default `4200`) and `HOST` (default `localhost`) in `.env`. Restart after changes. This server is restricted to your computer. Logs and private lifecycle state are in `.local/`; the stop script uses that state even if you have changed `.env`. `.venv`, `.local`, and `.env` are excluded from Git and are outside the served `dist/` folder. Do not delete `.local` or `.venv` while the server is running.
+- `src/app/app.component.html`: page, phone/address placeholders, and enquiry form.
+- `src/app/app.component.ts`: Angular form validation and submission behavior.
+- `src/app/contact.config.ts`: public recipient and FormSubmit endpoint.
+- `src/styles.css`: responsive design.
+- `public/assets/`: photos and locally stored brand logos.
+- `scripts/`: local environment setup and preview server.
+- `build/modern-motion/browser/`: generated production output (ignored by Git).
 
-If the port is busy, stop the existing preview or choose another `PORT`; the script will not kill an unrelated process. If Windows blocks scripts, use a process-only execution policy for the current PowerShell window after reviewing these scripts:
+Phone and studio address intentionally say “coming soon”; replace them when real details are available. Social profiles are also placeholders until their actual URLs are supplied.
 
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-```
+## Enquiry emails
 
-## Alternative: run locally with Node.js
+The form submits to **https://formsubmit.co/ajax/modernmotionbodylab@gmail.com**. Valid submissions include name, email, optional phone, training interest, and message. The form validates required fields, blocks repeated clicks while sending, preserves input after failures, and includes a honeypot.
 
-Install Node.js 22 or newer (npm is included), then open a terminal in this folder:
+**Required activation:** Submit an enquiry from the deployed site, then open the activation email from FormSubmit in `modernmotionbodylab@gmail.com` and confirm it. Check Spam too. Until activation is complete, email delivery is not verified. After activation, submit a fresh enquiry and confirm receipt and reply-to behavior. FormSubmit owns email delivery; GitHub Pages cannot run an email server.
+
+Browser tests use mocked service responses; they do not send real enquiries or claim that email was delivered. No Gmail password or private API key belongs in Angular source or `.env`. Visitors’ form details are sent to FormSubmit to forward the enquiry; the form discloses this.
+
+Service documentation: https://formsubmit.co/ajax-documentation and https://formsubmit.co/help.
+
+## GitHub Pages
+
+Repository: https://github.com/robinyUArizona/modern_motion_body_lab_website
+
+The workflow in `.github/workflows/deploy.yml` installs locked dependencies, builds Angular with the repository base path, and deploys only `build/modern-motion/browser` through GitHub Pages. Changes pushed to `main` trigger deployment.
+
+In GitHub **Settings → Pages → Build and deployment → Source**, select **GitHub Actions**. The workflow needs Pages enabled and permission to deploy. The expected project URL is https://robinyuarizona.github.io/modern_motion_body_lab_website/; check the Actions deployment result to confirm it is live.
+
+To reproduce the hosted build:
 
 ```sh
-npm run dev
+npx --yes pnpm@11.19.0 exec ng build --base-href /modern_motion_body_lab_website/
 ```
 
-Visit http://localhost:4200. Press Ctrl+C to stop. `npm start` does the same thing. No `npm install` or API keys are needed.
+`npm run build` builds for a root URL such as the local preview. `npm run check` checks TypeScript. The application is one page with section anchors, so it needs no server-side route rewrites.
 
-A `.env` file is already provided locally. On a fresh clone, run `cp .env.example .env` if you want to customize `HOST` and `PORT`; defaults also work without a file. `.env` is ignored by Git and is never served to the browser. The preview serves only `dist/` and blocks dotfiles. Keep local preview on `localhost` unless you intentionally want network access.
+## Brand assets
 
-If Node is not on PATH in this Mac's Codex workspace, use the installed runtime:
+Social brand SVGs: [SVGL](https://github.com/pheralb/svgl), MIT license (copy in `public/assets/social/LICENSE.txt`). Brand marks remain trademarks of their respective owners.
 
-```sh
-/Users/robins/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/serve.mjs
-```
-
-## Edit and check
-
-- `dist/index.html`: content, navigation, and social placeholders.
-- `dist/style.css`: black-and-white theme and responsive layout.
-- `dist/assets/`: website imagery.
-- `scripts/serve.mjs`: local preview server.
-
-Save your changes and refresh the browser. Run `npm run check` to check the preview server's JavaScript syntax. Check the page at desktop and phone widths, follow navigation links, and expand the audience sections.
-
-## Social profiles
-
-Instagram, YouTube, Facebook, TikTok, and Snapchat currently display “Coming soon.” No profile URLs were supplied, so these are intentionally non-clickable placeholders.
-
-When a real profile is ready, replace its `<span aria-disabled="true">…</span>` inside `.social-links` with an anchor, for example:
-
-```html
-<a href="YOUR_ACTUAL_PROFILE_URL" target="_blank" rel="noopener noreferrer">Instagram <small>Follow us ↗</small></a>
-```
-
-Social URLs are public content in the HTML; they do not need secrets or `.env` settings. `.env` configures only the local server. The hosted website uses the static `dist/` files, not the local preview server.
-
-Social brand SVGs: [SVGL](https://github.com/pheralb/svgl), MIT license (copy in `dist/assets/social/LICENSE.txt`). Original color variants are stored locally in `dist/assets/social/`; brand marks remain trademarks of their respective owners.
+The earlier static implementation in `dist/`, `scripts/serve.mjs`, and the former hosting metadata are retained for reference. They are not Angular source and are not used by the GitHub Pages workflow. Edit `src/` and `public/` for the current website.
