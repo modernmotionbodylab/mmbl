@@ -41,7 +41,7 @@ Stop this foreground dev server with Ctrl+C. Do not run both servers on port 420
 - `scripts/`: local environment setup and preview server.
 - `build/modern-motion/browser/`: generated production output (ignored by Git).
 
-Phone and studio address intentionally say “coming soon”; replace them when real details are available. Social profiles are also placeholders until their actual URLs are supplied.
+Phone: (281) 703-9810. Instagram, YouTube, and Threads link to the supplied profiles. Studio address, Facebook, TikTok, and Snapchat remain placeholders.
 
 ## Enquiry emails
 
@@ -74,3 +74,5 @@ npx --yes pnpm@11.19.0 exec ng build --base-href /modern_motion_body_lab_website
 Social brand SVGs: [SVGL](https://github.com/pheralb/svgl), MIT license (copy in `public/assets/social/LICENSE.txt`). Brand marks remain trademarks of their respective owners.
 
 The earlier static implementation in `dist/`, `scripts/serve.mjs`, and the former hosting metadata are retained for reference. They are not Angular source and are not used by the GitHub Pages workflow. Edit `src/` and `public/` for the current website.
+
+Threads SVG: Simple Icons 13.21.0, CC0 collection (https://github.com/simple-icons/simple-icons/tree/13.21.0). Threads uses its native black brand mark.
