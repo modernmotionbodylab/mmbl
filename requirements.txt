@@ -1,0 +1,3 @@
+# The local server uses Python's standard library only.
+# No third-party packages are required. local-start.ps1 installs this file
+# automatically so future Python dependencies can be added here.
