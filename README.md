@@ -41,7 +41,7 @@ Stop this foreground dev server with Ctrl+C. Do not run both servers on port 420
 - `scripts/`: local environment setup and preview server.
 - `build/modern-motion/browser/`: generated production output (ignored by Git).
 
-Phone: (281) 703-9810. Instagram, YouTube, and Threads link to the supplied profiles. Studio address, Facebook, TikTok, and Snapchat remain placeholders.
+Phone: (281) 703-9810. Instagram, YouTube, Threads, and TikTok link to the supplied profiles. Studio address, Facebook, and Snapchat remain placeholders.
 
 ## Enquiry emails
 
