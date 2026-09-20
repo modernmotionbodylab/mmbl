@@ -55,16 +55,16 @@ Service documentation: https://formsubmit.co/ajax-documentation and https://form
 
 ## GitHub Pages
 
-Repository: https://github.com/robinyUArizona/modern_motion_body_lab_website
+Repository: https://github.com/modernmotionbodylab/mmbl
 
 The workflow in `.github/workflows/deploy.yml` installs locked dependencies, builds Angular with the repository base path, and deploys only `build/modern-motion/browser` through GitHub Pages. Changes pushed to `main` trigger deployment.
 
-In GitHub **Settings → Pages → Build and deployment → Source**, select **GitHub Actions**. The workflow needs Pages enabled and permission to deploy. The expected project URL is https://robinyuarizona.github.io/modern_motion_body_lab_website/; check the Actions deployment result to confirm it is live.
+In GitHub **Settings → Pages → Build and deployment → Source**, select **GitHub Actions**. The workflow needs Pages enabled and permission to deploy. The expected project URL is https://modernmotionbodylab.github.io/mmbl/; check the Actions deployment result to confirm it is live.
 
 To reproduce the hosted build:
 
 ```sh
-npx --yes pnpm@11.19.0 exec ng build --base-href /modern_motion_body_lab_website/
+npx --yes pnpm@11.19.0 exec ng build --base-href /mmbl/
 ```
 
 `npm run build` builds for a root URL such as the local preview. `npm run check` checks TypeScript. The application is one page with section anchors, so it needs no server-side route rewrites.

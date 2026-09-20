@@ -23,7 +23,7 @@ jobs:
           node-version: '24'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec ng build --base-href /modern_motion_body_lab_website/
+      - run: pnpm exec ng build --base-href /mmbl/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
