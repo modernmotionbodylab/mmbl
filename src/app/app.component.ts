@@ -1,9 +1,11 @@
 import { Component, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { contactConfig } from './contact.config';
+import { subscriptionConfig } from './subscription.config';
 
 @Component({ selector: 'app-root', standalone: true, imports: [FormsModule], templateUrl: './app.component.html' })
 export class AppComponent {
+  readonly subscriptions = subscriptionConfig;
   model = { name: '', email: '', phone: '', interest: 'General enquiry', message: '', website: '' };
   sending = signal(false);
   status = signal('');

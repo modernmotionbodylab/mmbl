@@ -41,7 +41,7 @@ Stop this foreground dev server with Ctrl+C. Do not run both servers on port 420
 - `scripts/`: local environment setup and preview server.
 - `build/modern-motion/browser/`: generated production output (ignored by Git).
 
-Phone: (281) 703-9810. Instagram, YouTube, Threads, and TikTok link to the supplied profiles. Studio address, Facebook, and Snapchat remain placeholders.
+Phone: (281) 703-9810. Instagram, YouTube, Threads, TikTok, and Facebook link to the supplied profiles. Studio address and Snapchat remain placeholders.
 
 ## Enquiry emails
 
@@ -76,3 +76,5 @@ Social brand SVGs: [SVGL](https://github.com/pheralb/svgl), MIT license (copy in
 The earlier static implementation in `dist/`, `scripts/serve.mjs`, and the former hosting metadata are retained for reference. They are not Angular source and are not used by the GitHub Pages workflow. Edit `src/` and `public/` for the current website.
 
 Threads SVG: Simple Icons 13.21.0, CC0 collection (https://github.com/simple-icons/simple-icons/tree/13.21.0). Threads uses its native black brand mark.
+
+Online and in-person subscription destinations are configured in `src/app/subscription.config.ts`. Empty URLs display “coming soon”; set them to the actual checkout URLs when available.
