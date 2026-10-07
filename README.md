@@ -98,9 +98,9 @@ be retired.
 
 ## Google Calendar booking (no database)
 
-The website’s Schedule section shows a labeled example until a Google Apps
-Script web app is connected. The example times are **not real availability**.
-The request form remains available while setup is unfinished.
+The website’s Schedule section shows a connection status, with no times or
+booking counts, until a Google Apps Script web app is connected. The request
+form remains available while setup is unfinished.
 
 The production design uses the Google Calendar for `modernmotionbodylab@gmail.com`
 as the only persistent booking store. Create a 45-minute event whose title begins
