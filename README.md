@@ -122,15 +122,17 @@ settings, not in the Angular app or GitHub Pages.
 
 ### Activate live booking
 
-1. Sign in to [Google Apps Script](https://script.google.com/) as
-   `modernmotionbodylab@gmail.com` and create a new project. Copy
-   `google-calendar-booking/Code.gs` into the script file and add
-   `google-calendar-booking/Index.html` as an HTML file named `Index`.
+1. Sign in as `modernmotionbodylab@gmail.com` and open the existing
+   [Modern Motion Body Lab Booking Apps Script project](https://script.google.com/home/projects/1J_--yfJxuYyeEKQOJiRyMyOBFjG9XJbw2ZQy_qTVA7vW-Drye93UbkPk/edit).
+   Replace its `Code.gs` contents with `google-calendar-booking/Code.gs`, then
+   add an HTML file named `Index` containing
+   `google-calendar-booking/Index.html`.
 2. In **Project Settings → Script properties**, set `CALENDAR_ID` to the chosen
    Google Calendar ID (the primary calendar is normally the account email).
    Set `STRIPE_SECRET_KEY`, `ONLINE_PAYMENT_LINK_ID`,
-   `IN_PERSON_PAYMENT_LINK_ID`, `ONLINE_SESSIONS_PER_PERIOD`,
-   `IN_PERSON_SESSIONS_PER_PERIOD`, and `ONE_TIME_VALID_DAYS`.
+   `IN_PERSON_PAYMENT_LINK_ID`, `ONLINE_SESSIONS_PER_PERIOD=4`, and
+   `IN_PERSON_SESSIONS_PER_PERIOD=4`. Set `ONE_TIME_VALID_DAYS` only if either
+   payment link is for a one-time package; use the package's actual validity.
    Payment-link IDs start with `plink_` and are found in Stripe Dashboard; the
    public `buy.stripe.com` URLs are not those IDs. The session allowances and
    one-time validity must match the actual offers. Keep these values private.
