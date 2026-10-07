@@ -9,7 +9,7 @@ import { contactConfig } from '../contact.config';
   templateUrl: './workout-scheduler.component.html', styleUrl: './workout-scheduler.component.css'
 })
 export class WorkoutSchedulerComponent {
-  calendarConnected = Boolean(bookingCalendarConfig.supabaseUrl && bookingCalendarConfig.publishableKey);
+  calendarConnected = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(bookingCalendarConfig.appsScriptUrl);
   model = { format: '', date: '', time: '', name: '', email: '', phone: '', notes: '', website: '' };
   timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   sending = signal(false);

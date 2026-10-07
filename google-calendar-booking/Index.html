@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base target="_blank">
+  <style>
+    :root{font-family:Arial,sans-serif;color:#142c3d;background:#fffdf9}
+    *{box-sizing:border-box}body{margin:0;padding:24px}button,input{font:inherit}
+    button{cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}
+    h1,h2,h3,p{margin-top:0}h1{font-size:34px;letter-spacing:-1px;margin-bottom:8px}
+    .intro{color:#53636c;line-height:1.5}.card{border:1px solid #d3e0d8;background:white;border-radius:12px;padding:22px}
+    .toolbar,.tabs,.week-nav,.auth-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .toolbar{justify-content:space-between;margin:24px 0}.tabs button,.week-nav button,.secondary{border:1px solid #b5c6bc;border-radius:6px;background:white;color:#142c3d;padding:11px 14px;min-height:44px}
+    .tabs button.active{background:#1a615e;color:#fff;border-color:#1a615e}.week-nav span{min-width:150px;text-align:center;font-size:13px;font-weight:bold}
+    .days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px}.day{border:1px solid #d3e0d8;border-radius:8px;padding:12px;min-width:0;background:#fbfdfb}.day h2{font-size:15px;margin-bottom:14px}
+    .slot{border-top:2px solid #1a615e;padding:12px 0}.slot.full{border-top-color:#bb9a8b}.slot strong,.slot small,.slot span{display:block;overflow-wrap:anywhere}.slot strong{font-size:13px}.slot small{font-size:11px;color:#53636c;margin:5px 0}.slot span{font-size:12px;color:#1a615e;font-weight:bold;margin:8px 0}.slot.full span{color:#923c2a}
+    .slot button,.primary{border:0;border-radius:6px;background:#dc4b32;color:white;padding:11px 15px;min-height:44px;font-weight:bold}.slot button{width:100%;font-size:12px}.slot button.cancel{background:#fff;color:#923c2a;border:1px solid #cda398}.slot button.full{background:#aabcb1}.empty{font-size:12px;color:#53636c}
+    .auth{margin:24px 0}.auth-header{justify-content:space-between}.auth h2{font-size:22px;margin-bottom:8px}.auth p{font-size:14px;line-height:1.5;color:#53636c}.auth label{display:block;margin:14px 0;font-size:13px;font-weight:bold}.auth input{display:block;margin-top:7px;width:min(100%,420px);border:1px solid #b5c6bc;padding:12px;border-radius:6px;font-size:16px}
+    .status{min-height:22px;margin:15px 0;color:#1a615e;font-size:14px;line-height:1.5}.status.error{color:#aa3125}.subnote{font-size:13px;color:#53636c;line-height:1.5}.subnote a{color:#a63523;text-decoration:underline}
+    button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #1a615e;outline-offset:3px}
+    @media(max-width:1100px){.days{grid-template-columns:repeat(4,minmax(0,1fr))}}
+    @media(max-width:700px){body{padding:17px}.days{grid-template-columns:1fr}.day{padding:16px}.slot strong{font-size:16px}.slot small,.slot span,.slot button{font-size:14px}.toolbar{align-items:flex-start;flex-direction:column}.week-nav{width:100%;justify-content:space-between}.week-nav span{min-width:0}}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Book a workout</h1>
+    <p class="intro">Real times from Modern Motion Body Lab’s Google Calendar. Each session is 45 minutes, followed by a 15-minute trainer gap. Three spots are available per session.</p>
+    <div class="toolbar">
+      <div class="tabs" role="group" aria-label="Training type">
+        <button id="in-person" class="active" type="button">In person</button>
+        <button id="online" type="button">Online</button>
+      </div>
+      <div class="week-nav"><button id="previous" type="button" aria-label="Previous week">←</button><span id="week-label"></span><button id="next" type="button" aria-label="Next week">→</button><button id="refresh" type="button" aria-label="Refresh calendar">Refresh</button></div>
+    </div>
+    <p class="subnote">Times are shown in your local timezone. Deleting a workout from the trainer’s Google Calendar removes it from this schedule when refreshed.</p>
+    <div id="days" class="days" aria-live="polite"></div>
+    <section class="auth card" aria-label="Member sign-in">
+      <div class="auth-header"><h2 id="auth-title">Sign in to book</h2><button id="signout" class="secondary" type="button" hidden>Sign out</button></div>
+      <p id="auth-copy">Use the email from your subscription checkout. We’ll send you a one-time code.</p>
+      <div id="email-step"><label>Email address<input id="email" type="email" autocomplete="email" required placeholder="you@example.com"></label><button id="send-code" class="primary" type="button">Send email code</button></div>
+      <div id="code-step" hidden><label>Six-digit email code<input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"></label><button id="verify-code" class="primary" type="button">Sign in</button></div>
+    </section>
+    <p class="subnote">A paid subscription is required to reserve a spot. <a href="https://buy.stripe.com/fZu3cw5KR4K1bduaG81Fe02">In-person subscription</a> · <a href="https://buy.stripe.com/aFaaEYehn2BTchy15y1Fe03">Online subscription</a></p>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+  </main>
+  <script>
+    const state = {format:'in_person',week:0,slots:[],token:sessionStorage.getItem('mmblToken') || '',email:sessionStorage.getItem('mmblEmail') || '',busy:false};
+    const $ = id => document.getElementById(id);
+    const call = (name,...args) => new Promise((resolve,reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[name](...args));
+    const dateLabel = date => date.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+    const timeLabel = date => new Date(date).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+    function setStatus(message,error=false){$('status').textContent=message;$('status').classList.toggle('error',error);resize();}
+    function resize(){window.top.postMessage({type:'mmbl:booking-height',height:document.documentElement.scrollHeight},'*');}
+    function updateAuth(){
+      const signedIn=Boolean(state.token && state.email);
+      $('auth-title').textContent=signedIn?'Signed in as '+state.email:'Sign in to book';
+      $('auth-copy').textContent=signedIn?'Choose an open workout above. You can cancel your future bookings here.':'Use the email from your subscription checkout. We’ll send you a one-time code.';
+      $('email-step').hidden=signedIn;$('code-step').hidden=signedIn || !$('email-step').dataset.sent;$('signout').hidden=!signedIn;
+      resize();
+    }
+    function dayAt(index){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+state.week*7+index);return d;}
+    function render(){
+      $('in-person').classList.toggle('active',state.format==='in_person');$('online').classList.toggle('active',state.format==='online');
+      $('previous').disabled=state.week===0;$('next').disabled=state.week>=12;
+      $('week-label').textContent=dateLabel(dayAt(0))+' – '+dateLabel(dayAt(6));
+      const root=$('days');root.replaceChildren();
+      for(let i=0;i<7;i++){
+        const date=dayAt(i),day=document.createElement('section');day.className='day';
+        const heading=document.createElement('h2');heading.textContent=dateLabel(date);day.append(heading);
+        const slots=state.slots.filter(x=>x.format===state.format && new Date(x.start).toDateString()===date.toDateString());
+        if(!slots.length){const empty=document.createElement('p');empty.className='empty';empty.textContent='No sessions scheduled';day.append(empty);}
+        for(const slot of slots){
+          const card=document.createElement('article');card.className='slot'+(slot.spotsLeft===0?' full':'');
+          const title=document.createElement('strong');title.textContent=timeLabel(slot.start)+' – '+timeLabel(slot.end);card.append(title);
+          const gap=document.createElement('small');gap.textContent='45 min training · 15 min trainer gap';card.append(gap);
+          const availability=document.createElement('span');availability.textContent=slot.spotsLeft===0?'Full · 3/3 booked':(3-slot.spotsLeft)+'/3 booked · '+slot.spotsLeft+' spots open';card.append(availability);
+          if(slot.bookedByMe && slot.location){const location=document.createElement('small');location.textContent=slot.location;card.append(location);}
+          const button=document.createElement('button');button.type='button';button.textContent=slot.bookedByMe?'Cancel my booking':slot.spotsLeft===0?'Full':'Book this time';button.disabled=state.busy || (slot.spotsLeft===0 && !slot.bookedByMe);button.className=slot.bookedByMe?'cancel':slot.spotsLeft===0?'full':'';
+          button.addEventListener('click',()=>changeBooking(slot));card.append(button);day.append(card);
+        }
+        root.append(day);
+      }
+      resize();
+    }
+    async function refresh(){
+      try{state.slots=await call('getSessions',state.token);render();setStatus('Calendar updated.');}
+      catch(error){state.slots=[];render();setStatus(error.message || 'Calendar unavailable. Please try again.',true);}
+    }
+    async function changeBooking(slot){
+      if(!state.token){$('email').focus();setStatus('Sign in with the email from your subscription checkout first.',true);return;}
+      if(state.busy)return;
+      state.busy=true;render();setStatus(slot.bookedByMe?'Cancelling your booking…':'Checking your subscription and reserving your spot…');
+      try{
+        await call(slot.bookedByMe?'cancelSession':'bookSession',state.token,slot.id);
+        await refresh();setStatus(slot.bookedByMe?'Booking cancelled.':'Your workout is booked. It now appears on the trainer’s Google Calendar.');
+      }catch(error){setStatus(error.message || 'Please try again.',true);}
+      finally{state.busy=false;render();}
+    }
+    $('in-person').addEventListener('click',()=>{state.format='in_person';render();});
+    $('online').addEventListener('click',()=>{state.format='online';render();});
+    $('previous').addEventListener('click',()=>{state.week=Math.max(0,state.week-1);render();});
+    $('next').addEventListener('click',()=>{state.week=Math.min(12,state.week+1);render();});
+    $('refresh').addEventListener('click',refresh);
+    $('send-code').addEventListener('click',async()=>{
+      const email=$('email').value.trim();$('send-code').disabled=true;setStatus('Sending your code…');
+      try{await call('sendCode',email);$('email-step').dataset.sent='yes';$('code-step').hidden=false;setStatus('Check your email for the six-digit code.');resize();}
+      catch(error){setStatus(error.message || 'Could not send code.',true);}
+      finally{$('send-code').disabled=false;}
+    });
+    $('verify-code').addEventListener('click',async()=>{
+      $('verify-code').disabled=true;setStatus('Signing in…');
+      try{const result=await call('verifyCode',$('email').value,$('code').value);state.token=result.token;state.email=result.email;sessionStorage.setItem('mmblToken',result.token);sessionStorage.setItem('mmblEmail',result.email);updateAuth();await refresh();setStatus('Signed in. Choose an open workout to book.');}
+      catch(error){setStatus(error.message || 'Could not sign in.',true);}
+      finally{$('verify-code').disabled=false;}
+    });
+    $('signout').addEventListener('click',()=>{state.token='';state.email='';sessionStorage.removeItem('mmblToken');sessionStorage.removeItem('mmblEmail');$('email-step').dataset.sent='';$('code').value='';updateAuth();refresh();});
+    updateAuth();refresh();new ResizeObserver(resize).observe(document.body);
+    setInterval(()=>{if(!document.hidden)refresh();},30000);
+  </script>
+</body>
+</html>

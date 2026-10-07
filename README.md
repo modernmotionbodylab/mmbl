@@ -96,78 +96,60 @@ Commit the generated root files with the source changes. If GitHub Pages is
 later switched to **GitHub Actions** as its sole source, these root copies can
 be retired.
 
-## Shared workout calendar
+## Google Calendar booking (no database)
 
-The Schedule section now shows how a **shared** online/in-person calendar works.
-The displayed 6 PM / 7 PM / 8 PM slots are explicitly labeled as examples until
-a Supabase project is connected. They are **not real availability or bookings**.
-The existing request form remains available below the preview during setup.
-Once connected, that request form is hidden and the live calendar reads current
-seat counts from the database, with session times owned by Google Calendar.
-Visitors can see open/full times, sign in with an
-email code, book one of three spots, and cancel their own future booking. The
-calendar refreshes visible availability every 30 seconds and checks it again in
-the database at booking time.
+The website’s Schedule section shows a labeled example until a Google Apps
+Script web app is connected. The example times are **not real availability**.
+The request form remains available while setup is unfinished.
 
-A published training block lasts **45 minutes**. The next **15 minutes** are
-reserved for the trainer. One trainer cannot publish overlapping blocks, even
-if one is online and one is in person. The database locks a block when a
-booking is made so a fourth person cannot register, even if several people
-click at once. Other members' names and online meeting details are not shown
-in public availability.
+The production design uses the Google Calendar for `modernmotionbodylab@gmail.com`
+as the only persistent booking store. Create a 45-minute event whose title begins
+`[MMBL] In person` or `[MMBL] Online`; it appears on the website. Leave 15
+minutes between the end of one training event and the start of the next. The
+Apps Script reads the marked events and stores up to three verified customer
+emails as private tags on each event. A script lock serializes bookings, so a
+fourth person cannot reserve the same session. The event description shows the
+booked count. Deleting an event from Google Calendar removes it from the
+website on the next refresh (the embedded calendar refreshes every 30 seconds).
+Unmarked personal events do not appear on the website.
 
-### Activate Google Calendar booking
+The booking script emails a six-digit sign-in code to the customer and checks
+Stripe for a paid subscription or package purchased through the matching
+payment link. It counts booked sessions in the current paid period against the
+configured session allowance. Customer names and email addresses are never
+shown in public availability. The Stripe secret stays in Apps Script's private
+settings, not in the Angular app or GitHub Pages.
 
-1. Create a Supabase project and apply both migrations in `supabase/migrations/`
-   in filename order. Configure
-   email OTP to include `{{ .Token }}` in the email template and allow
-   `https://modernmotionbodylab.github.io/mmbl/` as an auth redirect URL.
-2. In the Google account `modernmotionbodylab@gmail.com`, choose the primary
-   calendar or create a separate Modern Motion Body Lab calendar. A separate
-   calendar keeps business scheduling distinct. Enable the Google Calendar API
-   in a Google Cloud project, create a service account, and share the chosen
-   calendar with its `client_email` using **Make changes to events** permission.
-   Put the calendar ID, the service-account JSON, and a long random job token
-   into Supabase Edge Function secrets using `supabase/.env.example` as a guide.
-   The JSON private key and job token must never go in Angular, Git, or a public
-   `.env` file. Connecting Google Calendar to Codex alone does not give the
-   public website a background connection.
-3. Create 45-minute events on the chosen calendar with titles beginning
-   `[MMBL] In person` or `[MMBL] Online`. Use the event's location field for
-   studio or meeting details. The website imports only these marked events;
-   ordinary calendar events stay off the public calendar. Leave 15 minutes
-   between the end of one workout and the start of the next for the trainer.
-   The database rejects overlapping
-   published sessions. No real sessions are preloaded by this repo.
-4. Deploy the `google-calendar-sync` Edge Function and schedule it every minute
-   with Supabase Cron. `supabase/schedule-google-sync.example.sql` shows the
-   Vault-backed schedule. A complete, successful Google fetch replaces the
-   90-day website schedule. If you delete a future workout event in Google
-   Calendar, its slot disappears on the next sync (normally within a minute),
-   any reservations for that session are removed, and paid session credits are
-   returned. Moving a booked event to another time or training format also
-   releases its existing reservations and returns those credits. The Google
-   event description shows the booked count out of three,
-   normally within a minute of a website booking or cancellation. It never
-   publishes customer names or email addresses. If sync is stale for more than
-   three minutes, new bookings pause instead of using old availability.
-5. Configure the Stripe Edge Function secrets from `supabase/.env.example`.
-   The two `plink_...` identifiers come from the Stripe Dashboard for the
-   existing online and in-person payment links. Confirm how many sessions each
-   purchase includes and how long they remain valid. Deploy
-   `stripe-booking-webhook`, then register its URL in Stripe for
-   `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
-   and `invoice.paid`. It verifies Stripe signatures and grants credits only
-   for those two configured links. Members must use the checkout email for
-   booking. Never put Stripe or service-role keys in the Angular app.
-6. Set `supabaseUrl` and `publishableKey` in
-   `src/app/workout-scheduler/booking-calendar.config.ts`. They are public
-   project values. Keep `requirePayment` in this file consistent with the
-   database's `booking_settings` row; the database is authoritative. Rebuild,
-   sync the Pages root, and deploy. Test the complete flow with Stripe test
-   mode, including concurrent attempts at the last spot, changing an event
-   time in Google Calendar, and deleting a booked event.
+### Activate live booking
 
-Until the Supabase project, Google service account, Stripe settings, and real
-schedule are connected, the live calendar remains off. The preview and existing
-email request form are not a confirmed booking system.
+1. Sign in to [Google Apps Script](https://script.google.com/) as
+   `modernmotionbodylab@gmail.com` and create a new project. Copy
+   `google-calendar-booking/Code.gs` into the script file and add
+   `google-calendar-booking/Index.html` as an HTML file named `Index`.
+2. In **Project Settings → Script properties**, set `CALENDAR_ID` to the chosen
+   Google Calendar ID (the primary calendar is normally the account email).
+   Set `STRIPE_SECRET_KEY`, `ONLINE_PAYMENT_LINK_ID`,
+   `IN_PERSON_PAYMENT_LINK_ID`, `ONLINE_SESSIONS_PER_PERIOD`,
+   `IN_PERSON_SESSIONS_PER_PERIOD`, and `ONE_TIME_VALID_DAYS`.
+   Payment-link IDs start with `plink_` and are found in Stripe Dashboard; the
+   public `buy.stripe.com` URLs are not those IDs. The session allowances and
+   one-time validity must match the actual offers. Keep these values private.
+3. Deploy the project as a **Web app**, executing as the calendar owner, with
+   access for visitors. Authorize Calendar, email, and Stripe network access.
+   Test with Stripe **test-mode** settings and a test payment before using live
+   settings. The script intentionally refuses a booking if payment settings
+   are missing or the customer has no matching paid purchase.
+4. Copy the deployment URL ending in `/exec` into `appsScriptUrl` in
+   `src/app/workout-scheduler/booking-calendar.config.ts`. Rebuild and deploy
+   the Angular website. The live embedded calendar then replaces the preview
+   and request form. Test three bookings at one time, a rejected fourth
+   booking, cancellation, and deletion of a Google Calendar event.
+
+Google Calendar stores the booking seats; no Supabase project or database is
+needed. Google Apps Script's temporary cache holds short-lived sign-in codes
+and browser sessions. Deleting a booked workout removes it from the website,
+but this version does **not** email affected customers or issue Stripe refunds
+automatically. Contact them and handle a refund or rescheduling if needed.
+
+Until the script is deployed and connected, the public site remains a preview
+and cannot accept confirmed calendar bookings.
