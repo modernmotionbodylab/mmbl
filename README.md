@@ -100,12 +100,12 @@ be retired.
 
 The website’s Schedule section embeds the live Google Apps Script booking web
 app at
-`https://script.google.com/macros/s/AKfycbzxGEReEwSUBk12igLWluqK82Rbsl_h9MbC0_C2MELDGwvbbsnCr34CS-vEo9QuUJw/exec`.
+`https://script.google.com/macros/s/AKfycbzzmHjsM-oIT71qpoAm0HyhxjuFmcRRtObqQQremKN5tr01LjZUYajKQXHeAWbin9OU/exec`.
 It shows live Google Calendar times and shared booking counts. If Google does
 not load the embedded calendar, the site hides the error after 12 seconds and
 shows the free-demo request form. The direct booking link remains available;
-Google Apps Script pages can fail in browsers signed in to several Google
-accounts, so test that link in a private window when troubleshooting.
+If the direct link also fails, check the Apps Script deployment and try a
+fresh web-app deployment before replacing the website link.
 
 The free demo calendar uses the Google Calendar for
 `modernmotionbodylab@gmail.com` as its only persistent booking store. Create a
