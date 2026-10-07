@@ -58,9 +58,15 @@ export class BookingCalendarComponent implements OnInit, OnDestroy {
       this.message.set('The Google Calendar connection is updating. Booking is paused until availability is current.');
       return;
     }
-    this.calendarCurrent.set(true);
     const { data, error } = availability;
-    if (error) { this.error.set(true); this.message.set('The calendar is temporarily unavailable. Please try Refresh.'); return; }
+    if (error) {
+      this.calendarCurrent.set(false);
+      this.slots.set([]);
+      this.error.set(true);
+      this.message.set('The calendar is temporarily unavailable. Please try Refresh.');
+      return;
+    }
+    this.calendarCurrent.set(true);
     this.slots.set((data || []) as Slot[]);
     if (this.signedIn()) {
       const credits = await this.db.rpc('member_credits');
