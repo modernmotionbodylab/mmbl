@@ -101,8 +101,11 @@ be retired.
 The website’s Schedule section embeds the live Google Apps Script booking web
 app at
 `https://script.google.com/macros/s/AKfycbzxGEReEwSUBk12igLWluqK82Rbsl_h9MbC0_C2MELDGwvbbsnCr34CS-vEo9QuUJw/exec`.
-It shows live Google Calendar times and shared booking counts. If that service
-is unavailable, visitors can use the enquiry form to contact the studio.
+It shows live Google Calendar times and shared booking counts. If Google does
+not load the embedded calendar, the site hides the error after 12 seconds and
+shows the free-demo request form. The direct booking link remains available;
+Google Apps Script pages can fail in browsers signed in to several Google
+accounts, so test that link in a private window when troubleshooting.
 
 The free demo calendar uses the Google Calendar for
 `modernmotionbodylab@gmail.com` as its only persistent booking store. Create a
@@ -130,8 +133,7 @@ availability.
    add an Apps Script HTML file named `Index` containing
    `google-calendar-booking/Index.html`, and add an Apps Script script file named
    `Schedule` containing `google-calendar-booking/Schedule.gs`. The Apps Script
-   project currently contains only `Code.gs`; opening the local `Index.html`
-   file in a browser does not add it to the project.
+   local `Index.html` file in a browser does not add it to the project.
 2. In **Project Settings → Script properties**, set `CALENDAR_ID` to
    `modernmotionbodylab@gmail.com`. The script uses that address by default,
    so this property is optional for the primary calendar. In **Project

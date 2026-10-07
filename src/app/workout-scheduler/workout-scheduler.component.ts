@@ -10,6 +10,7 @@ import { contactConfig } from '../contact.config';
 })
 export class WorkoutSchedulerComponent {
   calendarConnected = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(bookingCalendarConfig.appsScriptUrl);
+  calendarUnavailable = signal(false);
   model = { format: '', date: '', time: '', name: '', email: '', phone: '', notes: '', website: '' };
   timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   sending = signal(false);
