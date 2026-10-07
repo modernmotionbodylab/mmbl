@@ -17,6 +17,7 @@ export class BookingCalendarComponent implements OnInit, OnDestroy {
   selectedId = signal<string | null>(null);
   codeSent = signal(false);
   signedIn = signal(false);
+  calendarCurrent = signal(false);
   busy = signal(false);
   message = signal('');
   error = signal(false);
@@ -45,7 +46,20 @@ export class BookingCalendarComponent implements OnInit, OnDestroy {
   ngOnDestroy() { if (this.refreshTimer) clearInterval(this.refreshTimer); }
   private async load() {
     if (!this.db) return;
-    const { data, error } = await this.db.rpc('available_workouts');
+    const [availability, health] = await Promise.all([
+      this.db.rpc('available_workouts'),
+      this.db.rpc('google_calendar_health'),
+    ]);
+    const sync = (health.data || [])[0] as { connected: boolean; is_current: boolean } | undefined;
+    if (health.error || !sync?.is_current) {
+      this.calendarCurrent.set(false);
+      this.slots.set([]);
+      this.error.set(true);
+      this.message.set('The Google Calendar connection is updating. Booking is paused until availability is current.');
+      return;
+    }
+    this.calendarCurrent.set(true);
+    const { data, error } = availability;
     if (error) { this.error.set(true); this.message.set('The calendar is temporarily unavailable. Please try Refresh.'); return; }
     this.slots.set((data || []) as Slot[]);
     if (this.signedIn()) {
@@ -99,5 +113,5 @@ export class BookingCalendarComponent implements OnInit, OnDestroy {
     if (error) throw error;
     await this.load(); this.message.set('Booking cancelled. Your spot is available again.');
   }); }
-  canBook(slot: Slot) { return !slot.booked_by_me && slot.spots_left > 0 && (!this.signedIn() || !bookingCalendarConfig.requirePayment || this.totalCredits() > 0); }
+  canBook(slot: Slot) { return this.calendarCurrent() && !slot.booked_by_me && slot.spots_left > 0 && (!this.signedIn() || !bookingCalendarConfig.requirePayment || this.totalCredits() > 0); }
 }

@@ -1,2 +1,6 @@
 [functions.stripe-booking-webhook]
 verify_jwt = false
+
+[functions.google-calendar-sync]
+# Called by Supabase Cron with GOOGLE_SYNC_JOB_TOKEN in the Authorization header.
+verify_jwt = false
