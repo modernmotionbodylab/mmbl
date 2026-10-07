@@ -98,9 +98,11 @@ be retired.
 
 ## Google Calendar booking (no database)
 
-The website’s Schedule section shows a connection status, with no times or
-booking counts, until a Google Apps Script web app is connected. The request
-form remains available while setup is unfinished.
+The website’s Schedule section embeds the live Google Apps Script booking web
+app at
+`https://script.google.com/macros/s/AKfycbzxGEReEwSUBk12igLWluqK82Rbsl_h9MbC0_C2MELDGwvbbsnCr34CS-vEo9QuUJw/exec`.
+It shows live Google Calendar times and shared booking counts. If that service
+is unavailable, visitors can use the enquiry form to contact the studio.
 
 The free demo calendar uses the Google Calendar for
 `modernmotionbodylab@gmail.com` as its only persistent booking store. Create a
@@ -120,7 +122,7 @@ subscription, payment, Stripe key, or external database is required to reserve
 a free demo. Customer names and email addresses are never shown in public
 availability.
 
-### Activate live booking
+### Maintain live booking
 
 1. Sign in as `modernmotionbodylab@gmail.com` and open the existing
    [Modern Motion Body Lab Booking Apps Script project](https://script.google.com/home/projects/1J_--yfJxuYyeEKQOJiRyMyOBFjG9XJbw2ZQy_qTVA7vW-Drye93UbkPk/edit).
@@ -146,10 +148,10 @@ availability.
    access for visitors. Authorize Calendar and email access. Before publishing
    the booking URL, create a test demo event and verify a booking and
    cancellation with an email address you control.
-5. Copy the working deployment URL ending in `/exec` into `appsScriptUrl` in
+5. When changing Apps Script files, deploy a **new version** of the existing
+   public web app and keep its URL in `appsScriptUrl` in
    `src/app/workout-scheduler/booking-calendar.config.ts`. Rebuild and deploy
-   the Angular website. The live embedded calendar then replaces the preview
-   and request form. Test three bookings at one time, a rejected fourth
+   the Angular website if the URL changes. Test three bookings at one time, a rejected fourth
    booking, cancellation, and deletion of a Google Calendar event.
 
 Google Calendar stores the booking seats; no Supabase project or database is
@@ -158,5 +160,7 @@ and browser sessions. Deleting a booked demo removes it from the website, but
 this version does **not** email affected customers automatically. Contact them
 to reschedule if needed.
 
-Until the script is deployed and connected, the public site remains a preview
-and cannot accept confirmed calendar bookings.
+The Apps Script deployment must run as the calendar owner and allow **Anyone**
+to access the web app. Customers use one-time email codes; no customer is given
+direct access to the Google Calendar. Changes saved in the Apps Script editor
+do not reach the public `/exec` URL until a new deployment version is selected.
