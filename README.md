@@ -96,47 +96,16 @@ Commit the generated root files with the source changes. If GitHub Pages is
 later switched to **GitHub Actions** as its sole source, these root copies can
 be retired.
 
-## Semi-private member hub
+## Workout scheduling calendar
 
-The site now includes an interactive booking preview at `#member-hub`. It shows
-how a member can browse a weekly calendar, see available spots, book/cancel
-sessions, and track remaining credits. The public preview uses sample times,
-capacity, and credits and is clearly marked as a demo. It does not charge or
-reserve a real workout.
+Visitors choose **online** or **in-person** training, select a preferred date
+and time, then enter their name and email. The form sends the request to
+`modernmotionbodylab@gmail.com` through the existing FormSubmit endpoint. The
+message includes the visitor's timezone so the studio can confirm the correct
+time. The chosen time is a request until the studio confirms it by email; the
+website does not claim live availability or take a second payment. Existing
+Stripe subscription links remain available above the scheduling form.
 
-The live implementation is in `src/app/member-hub/live-hub.component.ts` and
-`supabase/`. It uses email-code sign-in, a published session calendar, paid
-credits, and database-side checks for capacity and membership. Booking and
-cancellation run in database transactions. The Stripe webhook verifies its
-signature, grants credits only for the configured Payment Link, and deduplicates
-retries. Subscription renewals with `invoice.paid` can grant a new block of
-credits. The live view is shown only after the public Supabase URL and
-publishable key are set in `src/app/member-hub/live.config.ts`.
-
-To activate real bookings:
-
-1. Create a Supabase project and apply
-   `supabase/migrations/20261007000000_member_bookings.sql` using the SQL editor
-   or CLI. Enable email OTP and configure its email template to include the
-   six-digit `{{ .Token }}` value. Allow your GitHub Pages URL as an auth URL.
-2. Confirm which Stripe Payment Link sells semi-private sessions. The current
-   live-view purchase button points to the existing in-person link. Find that
-   link's `plink_...` ID in Stripe, then set the Supabase Edge Function secrets
-   from `supabase/.env.example`. Choose the real credits per payment and credit
-   validity before enabling payment grants. Keep all `sk_`, `whsec_`, and
-   service-role values out of GitHub and the Angular app.
-3. Deploy `stripe-webhook` as a Supabase Edge Function. Register its HTTPS URL
-   in Stripe for `checkout.session.completed`,
-   `checkout.session.async_payment_succeeded`, and `invoice.paid` events. Use
-   the endpoint signing secret in the Edge Function secrets. The function has
-   JWT verification disabled because Stripe authenticates with its signature.
-4. Enter actual class times, location, and capacity in Supabase's
-   `training_sessions` table; publish only confirmed sessions. An unpublished
-   or past class cannot be booked. The site displays dates in the member's
-   local timezone.
-5. Set `supabaseUrl` and `supabasePublishableKey` in `live.config.ts`, rebuild,
-   and redeploy. Test one Stripe test-mode purchase and booking before using
-   live keys. Members must sign in with the email on their Stripe receipt.
-
-No Supabase project, payment-link ID, session schedule, or credit policy has
-been supplied yet. The live booking view remains off until these are set.
+FormSubmit requires its one-time activation for the recipient address. Until
+that activation is complete, requests may not reach the inbox. The form keeps
+all entered details if sending fails and offers the studio email as a fallback.

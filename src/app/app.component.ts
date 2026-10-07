@@ -1,10 +1,10 @@
 import { Component, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { contactConfig } from './contact.config';
-import { MemberHubComponent } from './member-hub/member-hub.component';
+import { WorkoutSchedulerComponent } from './workout-scheduler/workout-scheduler.component';
 import { subscriptionConfig } from './subscription.config';
 
-@Component({ selector: 'app-root', standalone: true, imports: [FormsModule, MemberHubComponent], templateUrl: './app.component.html' })
+@Component({ selector: 'app-root', standalone: true, imports: [FormsModule, WorkoutSchedulerComponent], templateUrl: './app.component.html' })
 export class AppComponent {
   readonly subscriptions = subscriptionConfig;
   model = { name: '', email: '', phone: '', interest: 'General enquiry', message: '', website: '' };

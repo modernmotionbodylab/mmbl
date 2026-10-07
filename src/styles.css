@@ -83,7 +83,7 @@ a:focus-visible,summary:focus-visible{outline-color:#dc4b32}
   header nav{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
-/* Five section links, with the member hub on its own row on phones. */
+/* Five section links, with scheduling on its own row on phones. */
 @media(min-width:1001px){header nav{gap:18px}}
 @media(min-width:701px) and (max-width:1000px){header nav{grid-template-columns:repeat(5,minmax(0,1fr))}}
 @media(max-width:700px){header nav a:last-child{grid-column:1/-1}}

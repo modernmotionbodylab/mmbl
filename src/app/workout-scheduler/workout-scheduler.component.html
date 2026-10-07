@@ -1,0 +1,15 @@
+<section id="schedule" class="schedule section" aria-labelledby="schedule-heading">
+  <div class="schedule-copy"><p class="eyebrow">YOUR NEXT WORKOUT STARTS HERE</p><h2 id="schedule-heading">Find a time<br>that works for you.</h2><p>Choose online or in-person training and pick your preferred date and time on the calendar. We’ll email you to confirm availability.</p><div class="schedule-steps"><div><span>01</span><p>Choose how you’d like to train.</p></div><div><span>02</span><p>Select a date and time.</p></div><div><span>03</span><p>We’ll confirm your workout by email.</p></div></div><p class="schedule-note">Already purchased a subscription? Use the same email address you used at checkout.</p></div>
+  <form class="schedule-form" #scheduleForm="ngForm" (ngSubmit)="submit(scheduleForm)">
+    <h3>Request a workout time</h3><p>Pick a preferred slot. Your booking is confirmed when you hear back from us.</p>
+    <fieldset><legend>How would you like to train? <span>*</span></legend><div class="format-options"><label><input type="radio" name="format" value="Online" [(ngModel)]="model.format" required><span>Online training</span></label><label><input type="radio" name="format" value="In person" [(ngModel)]="model.format" required><span>In-person training</span></label></div></fieldset>
+    <div class="form-row"><label>Preferred date <span>*</span><input type="date" name="date" [(ngModel)]="model.date" [min]="minDate" [max]="maxDate" required></label><label>Preferred time <span>*</span><input type="time" name="time" [(ngModel)]="model.time" required></label></div><p class="timezone">Time shown in your local timezone: {{ timezone }}.</p>
+    <div class="form-row"><label>Your name <span>*</span><input name="name" [(ngModel)]="model.name" required minlength="2" maxlength="100" autocomplete="name" placeholder="Your full name"></label><label>Email address <span>*</span><input name="email" [(ngModel)]="model.email" required email type="email" maxlength="254" autocomplete="email" placeholder="you@example.com"></label></div>
+    <label>Phone <small>(optional)</small><input type="tel" name="phone" [(ngModel)]="model.phone" maxlength="40" autocomplete="tel" placeholder="Your phone number"></label>
+    <label>Anything we should know? <small>(optional)</small><textarea name="notes" [(ngModel)]="model.notes" maxlength="1000" rows="3" placeholder="Share any scheduling preferences."></textarea></label>
+    <div class="honeypot" aria-hidden="true"><label>Leave this blank<input name="website" [(ngModel)]="model.website" tabindex="-1" autocomplete="off"></label></div>
+    <p class="privacy-note">Your request is sent through FormSubmit to Modern Motion Body Lab. Please don’t include sensitive health information.</p>
+    <button class="button" type="submit" [disabled]="sending()">{{ sending() ? 'Sending…' : 'Request this time' }} <span aria-hidden="true">↗</span></button>
+    <p class="schedule-status" [class.error]="hasError()" role="status" aria-live="polite">{{ status() }}</p>
+  </form>
+</section>
