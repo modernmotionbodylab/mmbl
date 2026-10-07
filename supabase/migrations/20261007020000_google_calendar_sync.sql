@@ -31,7 +31,9 @@ language plpgsql security definer set search_path = '' as $$
 declare session_row record;
 declare prior_session record;
 begin
-  if auth.role() <> 'service_role' then raise exception 'Server access required'; end if;
+  if auth.role() is distinct from 'service_role' then
+    raise exception 'Server access required';
+  end if;
   if calendar_id is null or length(calendar_id) = 0 or
      window_start < now() - interval '1 day' or
      window_end > now() + interval '100 days' or
@@ -44,7 +46,7 @@ begin
   -- moves an event to another hour in Google Calendar.
   update public.workout_sessions
     set published = false
-    where google_calendar_id = calendar_id
+    where google_event_id is not null
       and starts_at >= window_start and starts_at < window_end;
 
   for session_row in
@@ -100,7 +102,7 @@ begin
     delete from public.workout_bookings b
     using public.workout_sessions s
     where b.session_id = s.id
-      and s.google_calendar_id = calendar_id
+      and s.google_event_id is not null
       and not s.published
       and s.starts_at > now()
       and s.starts_at >= window_start and s.starts_at < window_end
