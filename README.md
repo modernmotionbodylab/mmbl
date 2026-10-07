@@ -108,4 +108,6 @@ Stripe subscription links remain available above the scheduling form.
 
 FormSubmit requires its one-time activation for the recipient address. Until
 that activation is complete, requests may not reach the inbox. The form keeps
-all entered details if sending fails and offers the studio email as a fallback.
+all entered details if sending fails and offers a prefilled email draft and copy
+button as fallbacks. The visitor must press Send in their email app to finish
+a fallback request. Do not treat a failed AJAX response as a confirmed booking.

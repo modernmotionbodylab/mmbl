@@ -12,6 +12,7 @@ export class WorkoutSchedulerComponent {
   sending = signal(false);
   status = signal('');
   hasError = signal(false);
+  deliveryFailed = signal(false);
   minDate = this.localDate(new Date());
   maxDate = this.localDate(new Date(new Date().setMonth(new Date().getMonth() + 6)));
 
@@ -22,9 +23,36 @@ export class WorkoutSchedulerComponent {
     return `${year}-${month}-${day}`;
   }
 
+  requestDetails(): string {
+    return [
+      'Workout scheduling request',
+      `Training: ${this.model.format}`,
+      `Preferred date: ${this.model.date}`,
+      `Preferred time: ${this.model.time} (${this.timezone})`,
+      `Name: ${this.model.name.trim()}`,
+      `Email: ${this.model.email.trim()}`,
+      `Phone: ${this.model.phone.trim() || 'Not provided'}`,
+      `Notes: ${this.model.notes.trim() || 'None'}`,
+    ].join('\n');
+  }
+
+  emailDraftUrl(): string {
+    return `mailto:${contactConfig.recipient}?subject=${encodeURIComponent('Workout scheduling request — Modern Motion Body Lab')}&body=${encodeURIComponent(this.requestDetails())}`;
+  }
+
+  async copyRequest() {
+    try {
+      await navigator.clipboard.writeText(this.requestDetails());
+      this.status.set('Request copied. Paste it into an email to modernmotionbodylab@gmail.com and press Send.');
+    } catch {
+      this.status.set('Copy was unavailable. Please use the email draft link or email modernmotionbodylab@gmail.com.');
+    }
+  }
+
   async submit(form: NgForm) {
     if (this.sending()) return;
     this.hasError.set(false);
+    this.deliveryFailed.set(false);
     this.status.set('');
     const date = this.model.date;
     if (form.invalid || !['Online', 'In person'].includes(this.model.format) ||
@@ -57,7 +85,8 @@ export class WorkoutSchedulerComponent {
       form.resetForm({ format: '', date: '', time: '', name: '', email: '', phone: '', notes: '', website: '' });
     } catch {
       this.hasError.set(true);
-      this.status.set(`We couldn’t confirm your request. Your details are still here. Please try again or email ${contactConfig.recipient}.`);
+      this.deliveryFailed.set(true);
+      this.status.set('The website could not send your request. Your details are still here. Use the email option below to send it directly.');
     } finally { this.sending.set(false); }
   }
 }

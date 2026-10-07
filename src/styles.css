@@ -87,3 +87,4 @@ a:focus-visible,summary:focus-visible{outline-color:#dc4b32}
 @media(min-width:1001px){header nav{gap:18px}}
 @media(min-width:701px) and (max-width:1000px){header nav{grid-template-columns:repeat(5,minmax(0,1fr))}}
 @media(max-width:700px){header nav a:last-child{grid-column:1/-1}}
+.form-fallback{display:inline-flex;align-items:center;min-height:44px;margin-top:14px;padding:10px 15px;border-radius:6px;background:var(--teal);color:#fff;font-size:14px;font-weight:700}.form-fallback:hover{background:#134c48}

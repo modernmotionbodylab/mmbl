@@ -11,10 +11,24 @@ export class AppComponent {
   sending = signal(false);
   status = signal('');
   hasError = signal(false);
+  deliveryFailed = signal(false);
+
+  enquiryEmailUrl(): string {
+    const details = [
+      'Modern Motion Body Lab enquiry',
+      `Name: ${this.model.name.trim()}`,
+      `Email: ${this.model.email.trim()}`,
+      `Phone: ${this.model.phone.trim() || 'Not provided'}`,
+      `Interest: ${this.model.interest}`,
+      '', this.model.message.trim(),
+    ].join('\n');
+    return `mailto:${contactConfig.recipient}?subject=${encodeURIComponent('Modern Motion Body Lab enquiry')}&body=${encodeURIComponent(details)}`;
+  }
 
   async submit(form: NgForm) {
     if (this.sending()) return;
     this.hasError.set(false);
+    this.deliveryFailed.set(false);
     if (form.invalid || !this.model.name.trim() || this.model.message.trim().length < 10) {
       form.control.markAllAsTouched();
       this.hasError.set(true);
@@ -41,7 +55,8 @@ export class AppComponent {
       form.resetForm({ name: '', email: '', phone: '', interest: 'General enquiry', message: '', website: '' });
     } catch {
       this.hasError.set(true);
-      this.status.set(`We couldn’t confirm your submission. Your message is still here. Please try again or email ${contactConfig.recipient}.`);
+      this.deliveryFailed.set(true);
+      this.status.set('The website could not send your enquiry. Your message is still here. Open the email draft below and press Send in your email app.');
     } finally { this.sending.set(false); }
   }
 }
