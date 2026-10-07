@@ -1,6 +1,7 @@
 <section id="schedule" class="schedule section" aria-labelledby="schedule-heading">
-  <div class="schedule-copy"><p class="eyebrow">YOUR NEXT WORKOUT STARTS HERE</p><h2 id="schedule-heading">Find a time<br>that works for you.</h2><p>Choose online or in-person training and pick your preferred date and time on the calendar. We’ll email you to confirm availability.</p><div class="schedule-steps"><div><span>01</span><p>Choose how you’d like to train.</p></div><div><span>02</span><p>Select a date and time.</p></div><div><span>03</span><p>We’ll confirm your workout by email.</p></div></div><p class="schedule-note">Already purchased a subscription? Use the same email address you used at checkout.</p></div>
-  <form class="schedule-form" #scheduleForm="ngForm" (ngSubmit)="submit(scheduleForm)">
+  <div class="schedule-copy"><p class="eyebrow">YOUR NEXT WORKOUT STARTS HERE</p><h2 id="schedule-heading">Find a time<br>that works for you.</h2><p>{{ calendarConnected ? "Choose online or in-person training, see open spots, and book a workout." : "The shared calendar is being connected. For now, pick a preferred date and time below and we’ll confirm by email." }}</p><div class="schedule-steps"><div><span>01</span><p>Choose how you’d like to train.</p></div><div><span>02</span><p>Select a date and time.</p></div><div><span>03</span><p>We’ll confirm your workout by email.</p></div></div><p class="schedule-note">Already purchased a subscription? Use the same email address you used at checkout.</p></div>
+  <app-booking-calendar></app-booking-calendar>
+  @if (!calendarConnected) {<form class="schedule-form" #scheduleForm="ngForm" (ngSubmit)="submit(scheduleForm)">
     <h3>Request a workout time</h3><p>Pick a preferred slot. Your booking is confirmed when you hear back from us.</p>
     <fieldset><legend>How would you like to train? <span>*</span></legend><div class="format-options"><label><input type="radio" name="format" value="Online" [(ngModel)]="model.format" required><span>Online training</span></label><label><input type="radio" name="format" value="In person" [(ngModel)]="model.format" required><span>In-person training</span></label></div></fieldset>
     <div class="form-row"><label>Preferred date <span>*</span><input type="date" name="date" [(ngModel)]="model.date" [min]="minDate" [max]="maxDate" required></label><label>Preferred time <span>*</span><input type="time" name="time" [(ngModel)]="model.time" required></label></div><p class="timezone">Time shown in your local timezone: {{ timezone }}.</p>
@@ -12,5 +13,5 @@
     <button class="button" type="submit" [disabled]="sending()">{{ sending() ? 'Sending…' : 'Request this time' }} <span aria-hidden="true">↗</span></button>
     <p class="schedule-status" [class.error]="hasError()" role="status" aria-live="polite">{{ status() }}</p>
     @if (deliveryFailed()) {<div class="schedule-fallback"><a class="email-fallback" [href]="emailDraftUrl()">Open email draft ↗</a><button type="button" class="copy-fallback" (click)="copyRequest()">Copy request details</button><p>With the email draft, press Send in your email app to finish your request.</p></div>}
-  </form>
+  </form>}
 </section>

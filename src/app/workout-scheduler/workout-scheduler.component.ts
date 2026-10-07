@@ -1,12 +1,15 @@
 import { Component, signal } from '@angular/core';
+import { BookingCalendarComponent } from './booking-calendar.component';
+import { bookingCalendarConfig } from './booking-calendar.config';
 import { FormsModule, NgForm } from '@angular/forms';
 import { contactConfig } from '../contact.config';
 
 @Component({
-  selector: 'app-workout-scheduler', standalone: true, imports: [FormsModule],
+  selector: 'app-workout-scheduler', standalone: true, imports: [FormsModule, BookingCalendarComponent],
   templateUrl: './workout-scheduler.component.html', styleUrl: './workout-scheduler.component.css'
 })
 export class WorkoutSchedulerComponent {
+  calendarConnected = Boolean(bookingCalendarConfig.supabaseUrl && bookingCalendarConfig.publishableKey);
   model = { format: '', date: '', time: '', name: '', email: '', phone: '', notes: '', website: '' };
   timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   sending = signal(false);

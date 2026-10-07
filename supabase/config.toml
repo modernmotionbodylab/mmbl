@@ -1,0 +1,2 @@
+[functions.stripe-booking-webhook]
+verify_jwt = false

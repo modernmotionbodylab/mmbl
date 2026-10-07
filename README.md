@@ -96,18 +96,52 @@ Commit the generated root files with the source changes. If GitHub Pages is
 later switched to **GitHub Actions** as its sole source, these root copies can
 be retired.
 
-## Workout scheduling calendar
+## Shared workout calendar
 
-Visitors choose **online** or **in-person** training, select a preferred date
-and time, then enter their name and email. The form sends the request to
-`modernmotionbodylab@gmail.com` through the existing FormSubmit endpoint. The
-message includes the visitor's timezone so the studio can confirm the correct
-time. The chosen time is a request until the studio confirms it by email; the
-website does not claim live availability or take a second payment. Existing
-Stripe subscription links remain available above the scheduling form.
+The Schedule section now shows how a **shared** online/in-person calendar works.
+The displayed 6 PM / 7 PM / 8 PM slots are explicitly labeled as examples until
+a Supabase project is connected. They are **not real availability or bookings**.
+The existing request form remains available below the preview during setup.
+Once connected, that request form is hidden and the live calendar reads current
+seat counts from the database. Visitors can see open/full times, sign in with an
+email code, book one of three spots, and cancel their own future booking. The
+calendar refreshes visible availability every 30 seconds and checks it again in
+the database at booking time.
 
-FormSubmit requires its one-time activation for the recipient address. Until
-that activation is complete, requests may not reach the inbox. The form keeps
-all entered details if sending fails and offers a prefilled email draft and copy
-button as fallbacks. The visitor must press Send in their email app to finish
-a fallback request. Do not treat a failed AJAX response as a confirmed booking.
+A published training block lasts **45 minutes**. The next **15 minutes** are
+reserved for the trainer. One trainer cannot publish overlapping blocks, even
+if one is online and one is in person. The database locks a block when a
+booking is made so a fourth person cannot register, even if several people
+click at once. Other members' names and online meeting details are not shown
+in public availability.
+
+### Activate live booking
+
+1. Create a Supabase project and apply
+   `supabase/migrations/20261007010000_shared_booking_calendar.sql`. Configure
+   email OTP to include `{{ .Token }}` in the email template and allow
+   `https://modernmotionbodylab.github.io/mmbl/` as an auth redirect URL.
+2. Enter the real trainer hours, dates, online/in-person format, and studio
+   timezone in Supabase's `workout_sessions` table. Each row needs
+   `starts_at`, `ends_at = starts_at + 45 minutes`, and
+   `trainer_reserved_until = starts_at + 60 minutes`. Set `published = true`
+   only for confirmed classes. No real classes are preloaded by this repo.
+3. Configure the Supabase Edge Function secrets from `supabase/.env.example`.
+   The two `plink_...` identifiers come from the Stripe Dashboard for the
+   existing online and in-person payment links. Confirm how many sessions each
+   purchase includes and how long they remain valid. Deploy
+   `stripe-booking-webhook`, then register its URL in Stripe for
+   `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+   and `invoice.paid`. It verifies Stripe signatures and grants credits only
+   for those two configured links. Members must use the checkout email for
+   booking. Never put Stripe or service-role keys in the Angular app.
+4. Set `supabaseUrl` and `publishableKey` in
+   `src/app/workout-scheduler/booking-calendar.config.ts`. They are public
+   project values. Keep `requirePayment` in this file consistent with the
+   database's `booking_settings` row; the database is authoritative. Rebuild,
+   sync the Pages root, and deploy. Test the complete flow with Stripe test
+   mode, including concurrent attempts at the last spot.
+
+Until these external settings and the real schedule are supplied, the live
+calendar remains off. The preview and existing email request form are not a
+confirmed booking system.
