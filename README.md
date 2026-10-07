@@ -102,23 +102,22 @@ The website’s Schedule section shows a connection status, with no times or
 booking counts, until a Google Apps Script web app is connected. The request
 form remains available while setup is unfinished.
 
-The production design uses the Google Calendar for `modernmotionbodylab@gmail.com`
-as the only persistent booking store. Create a 45-minute event whose title begins
-`[MMBL] In person` or `[MMBL] Online`; it appears on the website. Leave 15
-minutes between the end of one training event and the start of the next. The
-Apps Script reads the marked events and stores up to three verified customer
-emails as private tags on each event. A script lock serializes bookings, so a
-fourth person cannot reserve the same session. The event description shows the
-booked count. Deleting an event from Google Calendar removes it from the
-website on the next refresh (the embedded calendar refreshes every 30 seconds).
-Unmarked personal events do not appear on the website.
+The free demo calendar uses the Google Calendar for
+`modernmotionbodylab@gmail.com` as its only persistent booking store. Create a
+30-minute event whose title begins `[MMBL Demo] In person` or
+`[MMBL Demo] Online`; it appears on the website. Back-to-back demos are
+allowed. The Apps Script reads only these marked events and stores up to three
+verified customer emails as event tags. A script lock serializes bookings, so
+a fourth person cannot reserve the same demo. A visitor may hold one upcoming
+demo booking at a time and may cancel it to choose another time. The event
+description shows the booked count. Deleting an event from Google Calendar
+removes it from the website on the next refresh (every 30 seconds). Unmarked
+personal events do not appear on the website.
 
-The booking script emails a six-digit sign-in code to the customer and checks
-Stripe for a paid subscription or package purchased through the matching
-payment link. It counts booked sessions in the current paid period against the
-configured session allowance. Customer names and email addresses are never
-shown in public availability. The Stripe secret stays in Apps Script's private
-settings, not in the Angular app or GitHub Pages.
+The booking script emails a six-digit sign-in code to the customer. No
+subscription, payment, Stripe key, or external database is required to reserve
+a free demo. Customer names and email addresses are never shown in public
+availability.
 
 ### Activate live booking
 
@@ -127,20 +126,13 @@ settings, not in the Angular app or GitHub Pages.
    Replace its `Code.gs` contents with `google-calendar-booking/Code.gs`, then
    add an HTML file named `Index` containing
    `google-calendar-booking/Index.html`.
-2. In **Project Settings → Script properties**, set `CALENDAR_ID` to the chosen
-   Google Calendar ID (the primary calendar is normally the account email).
-   Set `STRIPE_SECRET_KEY`, `ONLINE_PAYMENT_LINK_ID`,
-   `IN_PERSON_PAYMENT_LINK_ID`, `ONLINE_SESSIONS_PER_PERIOD=4`, and
-   `IN_PERSON_SESSIONS_PER_PERIOD=4`. Set `ONE_TIME_VALID_DAYS` only if either
-   payment link is for a one-time package; use the package's actual validity.
-   Payment-link IDs start with `plink_` and are found in Stripe Dashboard; the
-   public `buy.stripe.com` URLs are not those IDs. The session allowances and
-   one-time validity must match the actual offers. Keep these values private.
+2. In **Project Settings → Script properties**, set `CALENDAR_ID` to
+   `modernmotionbodylab@gmail.com`. The script uses that address by default,
+   so this property is optional for the primary calendar.
 3. Deploy the project as a **Web app**, executing as the calendar owner, with
-   access for visitors. Authorize Calendar, email, and Stripe network access.
-   Test with Stripe **test-mode** settings and a test payment before using live
-   settings. The script intentionally refuses a booking if payment settings
-   are missing or the customer has no matching paid purchase.
+   access for visitors. Authorize Calendar and email access. Before publishing
+   the booking URL, create a test demo event and verify a booking and
+   cancellation with an email address you control.
 4. Copy the deployment URL ending in `/exec` into `appsScriptUrl` in
    `src/app/workout-scheduler/booking-calendar.config.ts`. Rebuild and deploy
    the Angular website. The live embedded calendar then replaces the preview
@@ -149,9 +141,9 @@ settings, not in the Angular app or GitHub Pages.
 
 Google Calendar stores the booking seats; no Supabase project or database is
 needed. Google Apps Script's temporary cache holds short-lived sign-in codes
-and browser sessions. Deleting a booked workout removes it from the website,
-but this version does **not** email affected customers or issue Stripe refunds
-automatically. Contact them and handle a refund or rescheduling if needed.
+and browser sessions. Deleting a booked demo removes it from the website, but
+this version does **not** email affected customers automatically. Contact them
+to reschedule if needed.
 
 Until the script is deployed and connected, the public site remains a preview
 and cannot accept confirmed calendar bookings.

@@ -8,9 +8,9 @@ test('three seats fill, deletion removes the slot, and cancellation releases a s
   const start = new Date(Date.now() + 86400000);
   const tags = new Map();
   const event = {
-    getTitle: () => '[MMBL] In person',
+    getTitle: () => '[MMBL Demo] In person',
     getStartTime: () => start,
-    getEndTime: () => new Date(start.getTime() + 45 * 60000),
+    getEndTime: () => new Date(start.getTime() + 30 * 60000),
     getId: () => 'training@example.com',
     getLocation: () => 'Studio',
     getTag: key => tags.get(key) || null,
@@ -34,12 +34,9 @@ test('three seats fill, deletion removes the slot, and cancellation releases a s
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Code.gs'), 'utf8'), context);
   const slot = context.getSessions('')[0];
   assert.equal(slot.spotsLeft, 3);
-  assert.throws(() => context.bookSession(tokens[0], slot.id), /Paid booking verification is not configured/);
-  context.paidPeriod_ = () => ({ start: Date.now(), end: Date.now() + 5 * 86400000, allowance: 10 });
-
   for (const token of tokens.slice(0, 3)) context.bookSession(token, slot.id);
   assert.equal(context.getSessions('')[0].spotsLeft, 0);
-  assert.match(event.description, /3 of 3 spots booked/);
+  assert.match(event.description, /3 of 3 free demo spots booked/);
   assert.throws(() => context.bookSession(tokens[3], slot.id), /full/);
   assert.equal(context.getSessions(tokens[0])[0].bookedByMe, true);
 
@@ -53,46 +50,19 @@ test('three seats fill, deletion removes the slot, and cancellation releases a s
   assert.throws(() => context.bookSession(tokens[0], slot.id), /removed from Google Calendar/);
 });
 
-test('paid member lookup uses the matching Stripe payment link and current period', () => {
-  const now = Math.floor(Date.now() / 1000);
-  const settings = {
-    STRIPE_SECRET_KEY: 'sk_test_example',
-    ONLINE_PAYMENT_LINK_ID: 'plink_online',
-    ONLINE_SESSIONS_PER_PERIOD: '5',
-  };
-  const requested = [];
-  const context = {
-    PropertiesService: { getScriptProperties: () => ({ getProperty: key => settings[key] || '' }) },
-    UrlFetchApp: { fetch: url => {
-      requested.push(url);
-      const value = url.includes('/checkout/sessions')
-        ? {data:[{id:'cs_1',mode:'subscription',payment_status:'paid',customer_details:{email:'jake@example.com'},subscription:'sub_1'}],has_more:false}
-        : {status:'active',items:{data:[{current_period_start:now-3600,current_period_end:now+86400}]}};
-      return {getResponseCode:()=>200,getContentText:()=>JSON.stringify(value)};
-    } },
-    Date, Number, String, JSON, RegExp, Error, Boolean, Array,
-  };
-  vm.createContext(context);
-  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Code.gs'), 'utf8'), context);
-  const period = context.paidPeriod_('jake@example.com','online',Date.now()+3600000);
-  assert.equal(period.allowance,5);
-  assert.ok(period.end > Date.now());
-  assert.ok(requested[0].includes('payment_link=plink_online'));
-  assert.equal(context.paidPeriod_('other@example.com','online',Date.now()),null);
-});
-
-test('a second workout inside the 15-minute trainer gap cannot be booked', () => {
+test('overlapping demo times are not offered, while back-to-back times are allowed', () => {
   const start = Date.now() + 86400000;
   const makeEvent = (time, id) => ({
-    getTitle: () => '[MMBL] In person',
+    getTitle: () => '[MMBL Demo] In person',
     getStartTime: () => new Date(time),
-    getEndTime: () => new Date(time + 45 * 60000),
+    getEndTime: () => new Date(time + 30 * 60000),
     getId: () => id,
     getTag: () => null,
   });
   const first = makeEvent(start, 'first@example.com');
-  const second = makeEvent(start + 45 * 60000, 'second@example.com');
-  const events = [first, second];
+  const second = makeEvent(start + 15 * 60000, 'second@example.com');
+  const third = makeEvent(start + 30 * 60000, 'third@example.com');
+  const events = [first, second, third];
   const context = {
     CalendarApp: { getCalendarById: () => ({ getEvents: (from, until) => events.filter(e => e.getStartTime() < until && e.getEndTime() > from) }) },
     CacheService: { getScriptCache: () => ({ get: () => null }) },
@@ -102,7 +72,8 @@ test('a second workout inside the 15-minute trainer gap cannot be booked', () =>
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Code.gs'), 'utf8'), context);
   const slots = context.getSessions('');
-  assert.equal(slots.length, 1);
+  assert.equal(slots.length, 2);
   assert.equal(slots[0].id, context.slotKey_(first));
+  assert.equal(slots[1].id, context.slotKey_(third));
   assert.throws(() => context.findSession_(context.slotKey_(second)), /overlaps another workout/);
 });

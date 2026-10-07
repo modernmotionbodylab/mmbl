@@ -25,8 +25,8 @@
 </head>
 <body>
   <main>
-    <h1>Book a workout</h1>
-    <p class="intro">Real times from Modern Motion Body Lab’s Google Calendar. Each session is 45 minutes, followed by a 15-minute trainer gap. Three spots are available per session.</p>
+    <h1>Book a free demo</h1>
+    <p class="intro">Real times from Modern Motion Body Lab’s Google Calendar. Each free demo is 30 minutes. Three spots are available per session.</p>
     <div class="toolbar">
       <div class="tabs" role="group" aria-label="Training type">
         <button id="in-person" class="active" type="button">In person</button>
@@ -34,15 +34,15 @@
       </div>
       <div class="week-nav"><button id="previous" type="button" aria-label="Previous week">←</button><span id="week-label"></span><button id="next" type="button" aria-label="Next week">→</button><button id="refresh" type="button" aria-label="Refresh calendar">Refresh</button></div>
     </div>
-    <p class="subnote">Times are shown in your local timezone. Deleting a workout from the trainer’s Google Calendar removes it from this schedule when refreshed.</p>
+    <p class="subnote">Times are shown in your local timezone. Deleting a demo from the trainer’s Google Calendar removes it from this schedule when refreshed.</p>
     <div id="days" class="days" aria-live="polite"></div>
     <section class="auth card" aria-label="Member sign-in">
       <div class="auth-header"><h2 id="auth-title">Sign in to book</h2><button id="signout" class="secondary" type="button" hidden>Sign out</button></div>
-      <p id="auth-copy">Use the email from your subscription checkout. We’ll send you a one-time code.</p>
+      <p id="auth-copy">Enter your email and we’ll send you a one-time code. No payment is needed.</p>
       <div id="email-step"><label>Email address<input id="email" type="email" autocomplete="email" required placeholder="you@example.com"></label><button id="send-code" class="primary" type="button">Send email code</button></div>
       <div id="code-step" hidden><label>Six-digit email code<input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"></label><button id="verify-code" class="primary" type="button">Sign in</button></div>
     </section>
-    <p class="subnote">A paid subscription is required to reserve a spot. <a href="https://buy.stripe.com/fZu3cw5KR4K1bduaG81Fe02">In-person subscription</a> · <a href="https://buy.stripe.com/aFaaEYehn2BTchy15y1Fe03">Online subscription</a></p>
+    <p class="subnote">One active free demo booking per email address. Cancel your booking here if you need to choose another time.</p>
     <p id="status" class="status" role="status" aria-live="polite"></p>
   </main>
   <script>
@@ -56,7 +56,7 @@
     function updateAuth(){
       const signedIn=Boolean(state.token && state.email);
       $('auth-title').textContent=signedIn?'Signed in as '+state.email:'Sign in to book';
-      $('auth-copy').textContent=signedIn?'Choose an open workout above. You can cancel your future bookings here.':'Use the email from your subscription checkout. We’ll send you a one-time code.';
+      $('auth-copy').textContent=signedIn?'Choose an open demo above. You can cancel your future booking here.':'Enter your email and we’ll send you a one-time code. No payment is needed.';
       $('email-step').hidden=signedIn;$('code-step').hidden=signedIn || !$('email-step').dataset.sent;$('signout').hidden=!signedIn;
       resize();
     }
@@ -74,7 +74,7 @@
         for(const slot of slots){
           const card=document.createElement('article');card.className='slot'+(slot.spotsLeft===0?' full':'');
           const title=document.createElement('strong');title.textContent=timeLabel(slot.start)+' – '+timeLabel(slot.end);card.append(title);
-          const gap=document.createElement('small');gap.textContent='45 min training · 15 min trainer gap';card.append(gap);
+          const duration=document.createElement('small');duration.textContent='30-minute free demo';card.append(duration);
           const availability=document.createElement('span');availability.textContent=slot.spotsLeft===0?'Full · 3/3 booked':(3-slot.spotsLeft)+'/3 booked · '+slot.spotsLeft+' spots open';card.append(availability);
           if(slot.bookedByMe && slot.location){const location=document.createElement('small');location.textContent=slot.location;card.append(location);}
           const button=document.createElement('button');button.type='button';button.textContent=slot.bookedByMe?'Cancel my booking':slot.spotsLeft===0?'Full':'Book this time';button.disabled=state.busy || (slot.spotsLeft===0 && !slot.bookedByMe);button.className=slot.bookedByMe?'cancel':slot.spotsLeft===0?'full':'';
@@ -89,12 +89,12 @@
       catch(error){state.slots=[];render();setStatus(error.message || 'Calendar unavailable. Please try again.',true);}
     }
     async function changeBooking(slot){
-      if(!state.token){$('email').focus();setStatus('Sign in with the email from your subscription checkout first.',true);return;}
+      if(!state.token){$('email').focus();setStatus('Sign in with your email before booking a free demo.',true);return;}
       if(state.busy)return;
-      state.busy=true;render();setStatus(slot.bookedByMe?'Cancelling your booking…':'Checking your subscription and reserving your spot…');
+      state.busy=true;render();setStatus(slot.bookedByMe?'Cancelling your booking…':'Reserving your free demo spot…');
       try{
         await call(slot.bookedByMe?'cancelSession':'bookSession',state.token,slot.id);
-        await refresh();setStatus(slot.bookedByMe?'Booking cancelled.':'Your workout is booked. It now appears on the trainer’s Google Calendar.');
+        await refresh();setStatus(slot.bookedByMe?'Booking cancelled.':'Your free demo is booked on the trainer’s Google Calendar.');
       }catch(error){setStatus(error.message || 'Please try again.',true);}
       finally{state.busy=false;render();}
     }

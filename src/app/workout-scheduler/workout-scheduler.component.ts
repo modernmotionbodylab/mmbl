@@ -28,7 +28,7 @@ export class WorkoutSchedulerComponent {
 
   requestDetails(): string {
     return [
-      'Workout scheduling request',
+      'Free demo scheduling request',
       `Training: ${this.model.format}`,
       `Preferred date: ${this.model.date}`,
       `Preferred time: ${this.model.time} (${this.timezone})`,
@@ -40,7 +40,7 @@ export class WorkoutSchedulerComponent {
   }
 
   emailDraftUrl(): string {
-    return `mailto:${contactConfig.recipient}?subject=${encodeURIComponent('Workout scheduling request — Modern Motion Body Lab')}&body=${encodeURIComponent(this.requestDetails())}`;
+    return `mailto:${contactConfig.recipient}?subject=${encodeURIComponent('Free demo request — Modern Motion Body Lab')}&body=${encodeURIComponent(this.requestDetails())}`;
   }
 
   async copyRequest() {
@@ -68,7 +68,7 @@ export class WorkoutSchedulerComponent {
     }
     if (this.model.website) return;
     this.sending.set(true);
-    this.status.set('Sending your scheduling request…');
+    this.status.set('Sending your free demo request…');
     try {
       const response = await fetch(contactConfig.endpoint, {
         method: 'POST',
@@ -77,7 +77,7 @@ export class WorkoutSchedulerComponent {
           name: this.model.name.trim(), email: this.model.email.trim(), phone: this.model.phone.trim(),
           training_type: this.model.format, preferred_date: date,
           preferred_time: this.model.time, timezone: this.timezone,
-          notes: this.model.notes.trim(), _subject: 'New workout scheduling request — Modern Motion Body Lab',
+          notes: this.model.notes.trim(), _subject: 'New free demo request — Modern Motion Body Lab',
           _template: 'table'
         }),
         signal: AbortSignal.timeout(20000),

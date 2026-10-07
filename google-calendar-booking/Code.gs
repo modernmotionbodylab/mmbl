@@ -8,7 +8,7 @@ var BOOKING_NOTE = /(?:\n\n)?\[MMBL bookings\][\s\S]*?\[\/MMBL bookings\]/g;
 
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index')
-    .setTitle('Modern Motion Body Lab — Book a workout')
+    .setTitle('Modern Motion Body Lab — Book a free demo')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
@@ -25,14 +25,14 @@ function calendar_() {
 
 function format_(event) {
   var title = event.getTitle();
-  if (/^\[MMBL\]\s*online(?:\s|$)/i.test(title)) return 'online';
-  if (/^\[MMBL\]\s*in[ -]?person(?:\s|$)/i.test(title)) return 'in_person';
+  if (/^\[MMBL demo\]\s*online(?:\s|$)/i.test(title)) return 'online';
+  if (/^\[MMBL demo\]\s*in[ -]?person(?:\s|$)/i.test(title)) return 'in_person';
   return null;
 }
 
 function isWorkout_(event) {
   return format_(event) &&
-    event.getEndTime().getTime() - event.getStartTime().getTime() === 45 * 60000;
+    event.getEndTime().getTime() - event.getStartTime().getTime() === 30 * 60000;
 }
 
 function seats_(event) {
@@ -65,7 +65,7 @@ function getSessions(token) {
   var previousStart = -Infinity;
   return ordered.filter(function(event) {
       var start = event.getStartTime().getTime();
-      if (start < previousStart + 60 * 60000) return false;
+      if (start < previousStart + 30 * 60000) return false;
       previousStart = start;
       return true;
     })
@@ -93,14 +93,14 @@ function findSession_(key) {
       startsAt > Date.now() + 90 * 86400000) {
     throw new Error('This workout is no longer available.');
   }
-  var candidates = calendar_().getEvents(new Date(startsAt - 1000), new Date(startsAt + 45 * 60000));
+  var candidates = calendar_().getEvents(new Date(startsAt - 1000), new Date(startsAt + 30 * 60000));
   var event = candidates.find(function(item) { return slotKey_(item) === key && isWorkout_(item); });
   if (!event) throw new Error('This workout was removed from Google Calendar. Refresh to see current times.');
-  var overlappingEarlier = calendar_().getEvents(new Date(startsAt - 60 * 60000), new Date(startsAt + 1000))
+  var overlappingEarlier = calendar_().getEvents(new Date(startsAt - 30 * 60000), new Date(startsAt + 1000))
     .some(function(item) {
       var otherStart = item.getStartTime().getTime();
       return isWorkout_(item) && slotKey_(item) !== key &&
-        (otherStart > startsAt - 60 * 60000 && otherStart < startsAt ||
+        (otherStart > startsAt - 30 * 60000 && otherStart < startsAt ||
          otherStart === startsAt && slotKey_(item) < key);
     });
   if (overlappingEarlier) throw new Error('This time overlaps another workout. Choose a different session.');
@@ -164,74 +164,19 @@ function verifyCode(email, code) {
   return { token: token, email: email };
 }
 
-function stripeGet_(path, params) {
-  var secret = setting_('STRIPE_SECRET_KEY');
-  if (!secret) throw new Error('Paid booking verification is not configured yet.');
-  var query = Object.keys(params || {}).map(function(key) {
-    return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
-  }).join('&');
-  var url = 'https://api.stripe.com/v1' + path + (query ? '?' + query : '');
-  var response = UrlFetchApp.fetch(url, {
-    headers: { Authorization: 'Bearer ' + secret },
-    muteHttpExceptions: true
-  });
-  if (response.getResponseCode() !== 200)
-    throw new Error('We could not verify your subscription right now. Please try later.');
-  return JSON.parse(response.getContentText());
-}
-
-function paidPeriod_(email, format, workoutStart) {
-  var linkId = setting_(format === 'online' ? 'ONLINE_PAYMENT_LINK_ID' : 'IN_PERSON_PAYMENT_LINK_ID');
-  var allowance = Number(setting_(format === 'online' ? 'ONLINE_SESSIONS_PER_PERIOD' : 'IN_PERSON_SESSIONS_PER_PERIOD'));
-  var validDays = Number(setting_('ONE_TIME_VALID_DAYS'));
-  if (!linkId || !/^plink_/.test(linkId) || !Number.isInteger(allowance) || allowance < 1)
-    throw new Error('Paid booking verification is not configured yet.');
-  var after = '';
-  var best = null;
-  for (var page = 0; page < 20; page++) {
-    var query = { payment_link: linkId, limit: 100 };
-    if (after) query.starting_after = after;
-    var result = stripeGet_('/checkout/sessions', query);
-    var sessions = result.data || [];
-    for (var i = 0; i < sessions.length; i++) {
-      var checkout = sessions[i];
-      var checkoutEmail = ((checkout.customer_details && checkout.customer_details.email) || checkout.customer_email || '').toLowerCase();
-      if (checkoutEmail !== email || checkout.payment_status !== 'paid') continue;
-      var period = null;
-      if (checkout.mode === 'subscription' && checkout.subscription) {
-        var id = typeof checkout.subscription === 'string' ? checkout.subscription : checkout.subscription.id;
-        var subscription = stripeGet_('/subscriptions/' + encodeURIComponent(id));
-        if (subscription.status !== 'active') continue;
-        var item = subscription.items && subscription.items.data && subscription.items.data[0];
-        var start = Number(item && item.current_period_start || subscription.current_period_start);
-        var end = Number(item && item.current_period_end || subscription.current_period_end);
-        if (start && end) period = { start: start * 1000, end: end * 1000 };
-      } else if (checkout.mode === 'payment' && Number.isInteger(validDays) && validDays > 0) {
-        period = { start: checkout.created * 1000, end: checkout.created * 1000 + validDays * 86400000 };
-      }
-      if (period && period.start <= workoutStart && workoutStart < period.end &&
-          (!best || period.end > best.end)) best = period;
-    }
-    if (!result.has_more || !sessions.length) return best && { start: best.start, end: best.end, allowance: allowance };
-    after = sessions[sessions.length - 1].id;
-  }
-  throw new Error('Membership lookup is taking too long. Please contact the studio.');
-}
-
-function usedSessions_(email, format, period) {
-  return calendar_().getEvents(new Date(period.start), new Date(period.end))
+function hasUpcomingDemo_(email) {
+  var now = new Date();
+  return calendar_().getEvents(now, new Date(now.getTime() + 90 * 86400000))
     .filter(function(event) {
-      return isWorkout_(event) && format_(event) === format &&
-        event.getStartTime().getTime() >= period.start &&
-        event.getStartTime().getTime() < period.end &&
+      return isWorkout_(event) && event.getStartTime() > now &&
         seats_(event).indexOf(email) !== -1;
-    }).length;
+    }).length > 0;
 }
 
 function updateCount_(event) {
   var booked = seats_(event).filter(Boolean).length;
   var description = (event.getDescription() || '').replace(BOOKING_NOTE, '').trimEnd();
-  var note = '[MMBL bookings]\n' + booked + ' of 3 spots booked. 45 minutes training + 15 minutes trainer gap.\n[/MMBL bookings]';
+  var note = '[MMBL bookings]\n' + booked + ' of 3 free demo spots booked. 30-minute session.\n[/MMBL bookings]';
   event.setDescription((description ? description + '\n\n' : '') + note);
 }
 
@@ -239,8 +184,6 @@ function bookSession(token, key) {
   var email = requireEmail_(token);
   var event = findSession_(key);
   var format = format_(event);
-  var period = paidPeriod_(email, format, event.getStartTime().getTime());
-  if (!period) throw new Error('No paid subscription was found for this training type and email.');
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
@@ -252,8 +195,8 @@ function bookSession(token, key) {
     var empty = seats.indexOf(null);
     if (empty < 0) empty = seats.indexOf('');
     if (empty < 0) throw new Error('This workout is full. Refresh to see other times.');
-    if (usedSessions_(email, format, period) >= period.allowance)
-      throw new Error('You have used the sessions included in this subscription period.');
+    if (hasUpcomingDemo_(email))
+      throw new Error('You already have a free demo booked. Cancel it before choosing another time.');
     event.setTag(SEAT_KEYS[empty], email);
     try { updateCount_(event); } catch (ignored) { /* Seat is still saved. */ }
     return { ok: true, start: event.getStartTime().toISOString(), format: format };
