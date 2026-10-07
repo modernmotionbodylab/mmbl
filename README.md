@@ -79,6 +79,23 @@ Threads SVG: Simple Icons 13.21.0, CC0 collection (https://github.com/simple-ico
 
 Online and in-person subscription destinations are configured in `src/app/subscription.config.ts`. Empty URLs display “coming soon”; set them to the actual checkout URLs when available.
 
+## GitHub Pages publishing
+
+This repository's Pages settings currently also run a branch-based Jekyll build
+from the repository root. That build can overwrite the Angular Actions
+deployment. The root `index.html`, hashed JS/CSS files, `.nojekyll`, and `assets/`
+are generated copies of the production Angular build, so both Pages sources
+publish the same website. After changing the website, run:
+
+```sh
+pnpm exec ng build --base-href /mmbl/
+.venv/bin/python scripts/sync_pages_root.py
+```
+
+Commit the generated root files with the source changes. If GitHub Pages is
+later switched to **GitHub Actions** as its sole source, these root copies can
+be retired.
+
 ## Semi-private member hub
 
 The site now includes an interactive booking preview at `#member-hub`. It shows
