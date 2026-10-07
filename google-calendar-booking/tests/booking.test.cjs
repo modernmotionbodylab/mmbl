@@ -77,3 +77,83 @@ test('overlapping demo times are not offered, while back-to-back times are allow
   assert.equal(slots[1].id, context.slotKey_(third));
   assert.throws(() => context.findSession_(context.slotKey_(second)), /overlaps another workout/);
 });
+
+test('availability reads only the requested calendar week', () => {
+  const tomorrow = Date.now() + 86400000;
+  const makeEvent = (start, id) => ({
+    getTitle: () => '[MMBL Demo] In person',
+    getStartTime: () => new Date(start),
+    getEndTime: () => new Date(start + 30 * 60000),
+    getId: () => id,
+    getTag: () => null,
+  });
+  const first = makeEvent(tomorrow, 'first@example.com');
+  const later = makeEvent(tomorrow + 14 * 86400000, 'later@example.com');
+  let requested;
+  const context = {
+    CalendarApp: { getCalendarById: () => ({ getEvents: (from, until) => {
+      requested = { from, until };
+      return [first, later].filter(e => e.getStartTime() < until && e.getEndTime() > from);
+    } }) },
+    CacheService: { getScriptCache: () => ({ get: () => null }) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: () => '' }) },
+    Date, Number, String, JSON, RegExp, Error, Boolean, Array,
+  };
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Code.gs'), 'utf8'), context);
+  const from = new Date(tomorrow - 3600000);
+  const until = new Date(tomorrow + 7 * 86400000 - 3600000);
+  assert.deepEqual(Array.from(context.getSessions('', from.toISOString(), until.toISOString()), x => x.id), [context.slotKey_(first)]);
+  assert.equal(requested.until.getTime() - requested.from.getTime(), 7 * 86400000);
+  assert.throws(() => context.getSessions('', from.toISOString(), new Date(tomorrow + 9 * 86400000).toISOString()), /Invalid calendar week/);
+});
+
+test('online and in-person bookings share the same three seats and other busy events block times', () => {
+  const start = new Date(Date.now() + 86400000);
+  const tags = new Map();
+  const hybrid = {
+    getTitle: () => '[MMBL Demo] Online or in person',
+    getStartTime: () => start,
+    getEndTime: () => new Date(start.getTime() + 30 * 60000),
+    getId: () => 'shared@example.com',
+    getLocation: () => 'Studio',
+    getTag: key => tags.get(key) || null,
+    setTag: (key, value) => tags.set(key, value),
+    deleteTag: key => tags.delete(key),
+    getDescription: () => '',
+    setDescription: () => {},
+  };
+  const busy = {
+    getTitle: () => 'Trainer unavailable',
+    getStartTime: () => new Date(start.getTime() + 5 * 60000),
+    getEndTime: () => new Date(start.getTime() + 15 * 60000),
+    getId: () => 'busy@example.com',
+    getTransparency: () => 'OPAQUE',
+  };
+  let events = [hybrid];
+  const cache = new Map();
+  const tokens = ['a', 'b', 'c', 'd'].map(letter => letter.repeat(8) + '-aaaa-4aaa-8aaa-' + letter.repeat(12));
+  tokens.forEach((token, i) => cache.set('session:' + token, ['jake','ryan','bakem','fourth'][i] + '@example.com'));
+  const context = {
+    CalendarApp: { EventTransparency: {TRANSPARENT:'TRANSPARENT'}, getCalendarById: () => ({getEvents: (from, until) => events.filter(e => e.getStartTime() < until && e.getEndTime() > from)}) },
+    CacheService: { getScriptCache: () => ({ get: key => cache.get(key) || null }) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: () => '' }) },
+    LockService: { getScriptLock: () => ({ waitLock: () => {}, releaseLock: () => {} }) },
+    Date, Number, String, JSON, RegExp, Error, Boolean, Array,
+  };
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Code.gs'), 'utf8'), context);
+  const slots = context.getSessions('');
+  assert.equal(slots.length, 2);
+  assert.equal(slots[0].spotsLeft, 3);
+  context.bookSession(tokens[0], slots[0].id, 'online');
+  context.bookSession(tokens[1], slots[0].id, 'in_person');
+  context.bookSession(tokens[2], slots[0].id, 'online');
+  assert.equal(context.getSessions('')[0].spotsLeft, 0);
+  assert.equal(context.getSessions('')[1].spotsLeft, 0);
+  assert.throws(() => context.bookSession(tokens[3], slots[0].id, 'in_person'), /full/);
+  assert.equal(context.getSessions(tokens[0])[0].bookingFormat, 'online');
+  events = [hybrid, busy];
+  assert.equal(context.getSessions('').length, 0);
+  assert.throws(() => context.bookSession(tokens[3], slots[0].id, 'online'), /no longer available/);
+});

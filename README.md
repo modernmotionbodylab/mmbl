@@ -104,9 +104,10 @@ form remains available while setup is unfinished.
 
 The free demo calendar uses the Google Calendar for
 `modernmotionbodylab@gmail.com` as its only persistent booking store. Create a
-30-minute event whose title begins `[MMBL Demo] In person` or
-`[MMBL Demo] Online`; it appears on the website. Back-to-back demos are
-allowed. The Apps Script reads only these marked events and stores up to three
+30-minute event whose title begins `[MMBL Demo] Online or in person`;
+it appears in both booking tabs with **three shared spots**. Back-to-back demos are
+allowed. Other busy events on the same Google Calendar hide conflicting demo
+times. The Apps Script reads only marked demo events and stores up to three
 verified customer emails as event tags. A script lock serializes bookings, so
 a fourth person cannot reserve the same demo. A visitor may hold one upcoming
 demo booking at a time and may cancel it to choose another time. The event
@@ -123,17 +124,29 @@ availability.
 
 1. Sign in as `modernmotionbodylab@gmail.com` and open the existing
    [Modern Motion Body Lab Booking Apps Script project](https://script.google.com/home/projects/1J_--yfJxuYyeEKQOJiRyMyOBFjG9XJbw2ZQy_qTVA7vW-Drye93UbkPk/edit).
-   Replace its `Code.gs` contents with `google-calendar-booking/Code.gs`, then
-   add an HTML file named `Index` containing
-   `google-calendar-booking/Index.html`.
+   Replace its `Code.gs` contents with the latest `google-calendar-booking/Code.gs`,
+   add an Apps Script HTML file named `Index` containing
+   `google-calendar-booking/Index.html`, and add an Apps Script script file named
+   `Schedule` containing `google-calendar-booking/Schedule.gs`. The Apps Script
+   project currently contains only `Code.gs`; opening the local `Index.html`
+   file in a browser does not add it to the project.
 2. In **Project Settings → Script properties**, set `CALENDAR_ID` to
    `modernmotionbodylab@gmail.com`. The script uses that address by default,
-   so this property is optional for the primary calendar.
-3. Deploy the project as a **Web app**, executing as the calendar owner, with
+   so this property is optional for the primary calendar. In **Project
+   Settings**, set the project time zone to **America/Chicago**.
+3. Run `installDemoSchedule` once in the Apps Script editor and approve Google
+   Calendar access. It creates 26 recurring event series: weekday starts at
+   5, 6, 7, and 8 AM and 5, 6, 7, and 8 PM; Saturday starts every 30 minutes
+   from 5–9:30 AM and 5–8:30 PM. There are 58 demo starts per week, each
+   lasting 30 minutes, with no Sunday slots. Online and in-person customers
+   share the three spots in each event. Running the setup again does not create
+   duplicate series. Delete a single occurrence in Google Calendar to remove
+   only that time; delete the series to remove all recurring times.
+4. Deploy the project as a **Web app**, executing as the calendar owner, with
    access for visitors. Authorize Calendar and email access. Before publishing
    the booking URL, create a test demo event and verify a booking and
    cancellation with an email address you control.
-4. Copy the deployment URL ending in `/exec` into `appsScriptUrl` in
+5. Copy the working deployment URL ending in `/exec` into `appsScriptUrl` in
    `src/app/workout-scheduler/booking-calendar.config.ts`. Rebuild and deploy
    the Angular website. The live embedded calendar then replaces the preview
    and request form. Test three bookings at one time, a rejected fourth

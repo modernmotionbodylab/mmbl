@@ -26,7 +26,7 @@
 <body>
   <main>
     <h1>Book a free demo</h1>
-    <p class="intro">Real times from Modern Motion Body Lab’s Google Calendar. Each free demo is 30 minutes. Three spots are available per session.</p>
+    <p class="intro">Real times from Modern Motion Body Lab’s Google Calendar. Each free demo is 30 minutes. Online and in-person bookings share three spots per session.</p>
     <div class="toolbar">
       <div class="tabs" role="group" aria-label="Training type">
         <button id="in-person" class="active" type="button">In person</button>
@@ -76,6 +76,7 @@
           const title=document.createElement('strong');title.textContent=timeLabel(slot.start)+' – '+timeLabel(slot.end);card.append(title);
           const duration=document.createElement('small');duration.textContent='30-minute free demo';card.append(duration);
           const availability=document.createElement('span');availability.textContent=slot.spotsLeft===0?'Full · 3/3 booked':(3-slot.spotsLeft)+'/3 booked · '+slot.spotsLeft+' spots open';card.append(availability);
+          if(slot.bookedByMe){const bookedAs=document.createElement('small');bookedAs.textContent='Your booking: '+(slot.bookingFormat==='online'?'online':'in person');card.append(bookedAs);}
           if(slot.bookedByMe && slot.location){const location=document.createElement('small');location.textContent=slot.location;card.append(location);}
           const button=document.createElement('button');button.type='button';button.textContent=slot.bookedByMe?'Cancel my booking':slot.spotsLeft===0?'Full':'Book this time';button.disabled=state.busy || (slot.spotsLeft===0 && !slot.bookedByMe);button.className=slot.bookedByMe?'cancel':slot.spotsLeft===0?'full':'';
           button.addEventListener('click',()=>changeBooking(slot));card.append(button);day.append(card);
@@ -85,7 +86,8 @@
       resize();
     }
     async function refresh(){
-      try{state.slots=await call('getSessions',state.token);render();setStatus('Calendar updated.');}
+      const from=dayAt(0),until=dayAt(7),requestedWeek=state.week;
+      try{const slots=await call('getSessions',state.token,from.toISOString(),until.toISOString());if(state.week!==requestedWeek)return;state.slots=slots;render();setStatus('Calendar updated.');}
       catch(error){state.slots=[];render();setStatus(error.message || 'Calendar unavailable. Please try again.',true);}
     }
     async function changeBooking(slot){
@@ -93,15 +95,15 @@
       if(state.busy)return;
       state.busy=true;render();setStatus(slot.bookedByMe?'Cancelling your booking…':'Reserving your free demo spot…');
       try{
-        await call(slot.bookedByMe?'cancelSession':'bookSession',state.token,slot.id);
+        await call(slot.bookedByMe?'cancelSession':'bookSession',state.token,slot.id,slot.format);
         await refresh();setStatus(slot.bookedByMe?'Booking cancelled.':'Your free demo is booked on the trainer’s Google Calendar.');
       }catch(error){setStatus(error.message || 'Please try again.',true);}
       finally{state.busy=false;render();}
     }
     $('in-person').addEventListener('click',()=>{state.format='in_person';render();});
     $('online').addEventListener('click',()=>{state.format='online';render();});
-    $('previous').addEventListener('click',()=>{state.week=Math.max(0,state.week-1);render();});
-    $('next').addEventListener('click',()=>{state.week=Math.min(12,state.week+1);render();});
+    $('previous').addEventListener('click',()=>{state.week=Math.max(0,state.week-1);refresh();});
+    $('next').addEventListener('click',()=>{state.week=Math.min(12,state.week+1);refresh();});
     $('refresh').addEventListener('click',refresh);
     $('send-code').addEventListener('click',async()=>{
       const email=$('email').value.trim();$('send-code').disabled=true;setStatus('Sending your code…');

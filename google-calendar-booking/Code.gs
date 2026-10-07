@@ -4,6 +4,7 @@
  * Deploy as a web app: execute as the owner, access by anyone.
  */
 var SEAT_KEYS = ['mmbl-seat-1', 'mmbl-seat-2', 'mmbl-seat-3'];
+var FORMAT_KEYS = ['mmbl-format-1', 'mmbl-format-2', 'mmbl-format-3'];
 var BOOKING_NOTE = /(?:\n\n)?\[MMBL bookings\][\s\S]*?\[\/MMBL bookings\]/g;
 
 function doGet() {
@@ -25,6 +26,7 @@ function calendar_() {
 
 function format_(event) {
   var title = event.getTitle();
+  if (/^\[MMBL demo\]\s*online or in person(?:\s|$)/i.test(title)) return 'hybrid';
   if (/^\[MMBL demo\]\s*online(?:\s|$)/i.test(title)) return 'online';
   if (/^\[MMBL demo\]\s*in[ -]?person(?:\s|$)/i.test(title)) return 'in_person';
   return null;
@@ -37,6 +39,17 @@ function isWorkout_(event) {
 
 function seats_(event) {
   return SEAT_KEYS.map(function(key) { return event.getTag(key); });
+}
+
+function busyConflict_(event, others) {
+  var start = event.getStartTime().getTime();
+  var end = event.getEndTime().getTime();
+  return others.some(function(other) {
+    if (slotKey_(other) === slotKey_(event)) return false;
+    if (isWorkout_(other)) return false;
+    if (other.getTransparency && other.getTransparency() === CalendarApp.EventTransparency.TRANSPARENT) return false;
+    return other.getStartTime().getTime() < end && other.getEndTime().getTime() > start;
+  });
 }
 
 function slotKey_(event) {
@@ -55,12 +68,24 @@ function requireEmail_(token) {
   return email;
 }
 
-function getSessions(token) {
+function getSessions(token, fromIso, untilIso) {
   var email = emailFromToken_(token);
   var now = new Date();
-  var until = new Date(now.getTime() + 90 * 86400000);
-  var ordered = calendar_().getEvents(now, until)
-    .filter(function(event) { return isWorkout_(event) && event.getStartTime() > now; })
+  var from = fromIso ? new Date(fromIso) : now;
+  var until = untilIso ? new Date(untilIso) : new Date(now.getTime() + 90 * 86400000);
+  if (!Number.isFinite(from.getTime()) || !Number.isFinite(until.getTime()) ||
+      from < new Date(now.getTime() - 86400000) ||
+      until > new Date(now.getTime() + 91 * 86400000) ||
+      from >= until || (fromIso && until - from > 8 * 86400000)) {
+    throw new Error('Invalid calendar week. Refresh and try again.');
+  }
+  var allEvents = calendar_().getEvents(from, until);
+  var ordered = allEvents
+    .filter(function(event) {
+      return isWorkout_(event) && event.getStartTime() > now &&
+        event.getStartTime().getTime() <= now.getTime() + 90 * 86400000 &&
+        !busyConflict_(event, allEvents);
+    })
     .sort(function(a, b) { return a.getStartTime() - b.getStartTime() || slotKey_(a).localeCompare(slotKey_(b)); });
   var previousStart = -Infinity;
   return ordered.filter(function(event) {
@@ -69,19 +94,24 @@ function getSessions(token) {
       previousStart = start;
       return true;
     })
-    .map(function(event) {
+    .reduce(function(slots, event) {
       var booked = seats_(event).filter(Boolean);
       var mine = Boolean(email && booked.indexOf(email) !== -1);
-      return {
+      var mineIndex = mine ? seats_(event).indexOf(email) : -1;
+      var savedFormat = mineIndex >= 0 ? event.getTag(FORMAT_KEYS[mineIndex]) : '';
+      var formats = format_(event) === 'hybrid' ? ['in_person', 'online'] : [format_(event)];
+      formats.forEach(function(format) { slots.push({
         id: slotKey_(event),
-        format: format_(event),
+        format: format,
         start: event.getStartTime().toISOString(),
         end: event.getEndTime().toISOString(),
         spotsLeft: 3 - booked.length,
         bookedByMe: mine,
-        location: mine ? event.getLocation() : ''
-      };
-    })
+        bookingFormat: mine ? (savedFormat || format) : '',
+        location: mine && (savedFormat || format) === 'in_person' ? event.getLocation() : ''
+      }); });
+      return slots;
+    }, [])
     .sort(function(a, b) { return a.start.localeCompare(b.start); });
 }
 
@@ -96,6 +126,7 @@ function findSession_(key) {
   var candidates = calendar_().getEvents(new Date(startsAt - 1000), new Date(startsAt + 30 * 60000));
   var event = candidates.find(function(item) { return slotKey_(item) === key && isWorkout_(item); });
   if (!event) throw new Error('This workout was removed from Google Calendar. Refresh to see current times.');
+  if (busyConflict_(event, candidates)) throw new Error('This time is no longer available on the trainer’s calendar.');
   var overlappingEarlier = calendar_().getEvents(new Date(startsAt - 30 * 60000), new Date(startsAt + 1000))
     .some(function(item) {
       var otherStart = item.getStartTime().getTime();
@@ -180,16 +211,21 @@ function updateCount_(event) {
   event.setDescription((description ? description + '\n\n' : '') + note);
 }
 
-function bookSession(token, key) {
+function bookSession(token, key, requestedFormat) {
   var email = requireEmail_(token);
   var event = findSession_(key);
-  var format = format_(event);
+  var format = requestedFormat || format_(event);
+  if (format !== 'online' && format !== 'in_person') throw new Error('Choose online or in-person training.');
+  if (format_(event) !== 'hybrid' && format_(event) !== format)
+    throw new Error('That training format is not offered at this time.');
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
     // Re-read after acquiring the lock. This prevents a fourth simultaneous
     // request from seeing the same last open seat.
     event = findSession_(key);
+    if (format_(event) !== 'hybrid' && format_(event) !== format)
+      throw new Error('That training format is not offered at this time.');
     var seats = seats_(event);
     if (seats.indexOf(email) !== -1) throw new Error('You already booked this workout.');
     var empty = seats.indexOf(null);
@@ -198,6 +234,7 @@ function bookSession(token, key) {
     if (hasUpcomingDemo_(email))
       throw new Error('You already have a free demo booked. Cancel it before choosing another time.');
     event.setTag(SEAT_KEYS[empty], email);
+    event.setTag(FORMAT_KEYS[empty], format);
     try { updateCount_(event); } catch (ignored) { /* Seat is still saved. */ }
     return { ok: true, start: event.getStartTime().toISOString(), format: format };
   } finally {
@@ -214,6 +251,7 @@ function cancelSession(token, key) {
     var seat = seats_(event).indexOf(email);
     if (seat < 0) throw new Error('You do not have a booking for this workout.');
     event.deleteTag(SEAT_KEYS[seat]);
+    event.deleteTag(FORMAT_KEYS[seat]);
     try { updateCount_(event); } catch (ignored) { /* Cancellation is saved. */ }
     return { ok: true };
   } finally {
