@@ -1,12 +1,15 @@
 <div class="calendar-wrap" aria-labelledby="calendar-heading">
   @if (configured && scriptUrl) {
     <h3 id="calendar-heading" class="visually-hidden">Live workout booking calendar</h3>
-    <iframe class="booking-frame" [src]="scriptUrl" [style.height.px]="frameHeight()" [style.display]="unavailable() ? 'none' : 'block'" (load)="onFrameLoad()"
-      title="Modern Motion Body Lab workout booking calendar" loading="lazy" referrerpolicy="no-referrer"></iframe>
-    @if (unavailable()) {
-      <div class="calendar-preview-warning" role="status"><strong>Google isn't opening the booking calendar</strong><p>Try the booking link in a private window. If you still see a Google error, send a preferred time using the request form below. We’ll confirm it by email.</p></div>
+    <iframe class="booking-frame" [src]="scriptUrl" [style.height.px]="frameHeight()" [style.display]="frameReady() ? 'block' : 'none'" (load)="onFrameLoad()"
+      title="Modern Motion Body Lab workout booking calendar" referrerpolicy="no-referrer"></iframe>
+    @if (!frameReady() && !unavailable()) {
+      <p class="calendar-loading" role="status">Loading live demo times…</p>
     }
-    <p class="frame-help"><a [href]="bookingCalendarUrl" target="_blank" rel="noopener noreferrer">Open booking calendar in a new tab ↗</a></p>
+    @if (unavailable()) {
+      <div class="calendar-preview-warning" role="status"><strong>Calendar preview is unavailable here</strong><p>Open the full booking calendar to see live times and reserve a free demo. You can also send a preferred time using the request form below; we’ll confirm it by email.</p></div>
+    }
+    <a class="calendar-open-link" [href]="bookingCalendarUrl" target="_blank" rel="noopener noreferrer">Open full booking calendar ↗</a>
   } @else {
     <div class="calendar-head"><div><p class="eyebrow">FREE DEMO BOOKING</p><h3 id="calendar-heading">Calendar coming soon.</h3><p>Free demos last 30 minutes. Online and in-person visitors share three spots at each time.</p><p><strong>Planned demo hours (Central Time):</strong> Monday–Friday at 5, 6, 7, and 8 AM, and 5, 6, 7, and 8 PM. Saturday every 30 minutes from 5–10 AM and 5–9 PM. The final Saturday starts are 9:30 AM and 8:30 PM.</p></div><span class="capacity-badge">UP TO 3 PEOPLE</span></div>
     <div class="calendar-preview-warning"><strong>Live availability is not connected yet</strong><p>No times or booking counts are shown until the Google Calendar connection is ready. You can request a free demo using the form below; we’ll confirm it by email.</p></div>

@@ -10,7 +10,7 @@ import { bookingCalendarConfig } from './booking-calendar.config';
 export class BookingCalendarComponent implements OnDestroy {
   private sanitizer = inject(DomSanitizer);
   private loadTimer?: ReturnType<typeof setTimeout>;
-  private frameReady = false;
+  frameReady = signal(false);
   @Output() availabilityChange = new EventEmitter<boolean>();
   configured = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(bookingCalendarConfig.appsScriptUrl);
   bookingCalendarUrl = bookingCalendarConfig.appsScriptUrl;
@@ -20,12 +20,12 @@ export class BookingCalendarComponent implements OnDestroy {
   unavailable = signal(false);
 
   onFrameLoad() {
-    if (this.frameReady) return;
+    if (this.frameReady()) return;
     clearTimeout(this.loadTimer);
     this.loadTimer = setTimeout(() => {
       this.unavailable.set(true);
       this.availabilityChange.emit(true);
-    }, 12000);
+    }, 8000);
   }
 
   ngOnDestroy() {
@@ -39,7 +39,7 @@ export class BookingCalendarComponent implements OnDestroy {
         event.data?.type !== 'mmbl:booking-height') return;
     const height = Number(event.data.height);
     if (Number.isFinite(height)) {
-      this.frameReady = true;
+      this.frameReady.set(true);
       clearTimeout(this.loadTimer);
       this.unavailable.set(false);
       this.availabilityChange.emit(false);

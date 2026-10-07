@@ -102,8 +102,8 @@ The website’s Schedule section embeds the live Google Apps Script booking web
 app at
 `https://script.google.com/macros/s/AKfycbzzmHjsM-oIT71qpoAm0HyhxjuFmcRRtObqQQremKN5tr01LjZUYajKQXHeAWbin9OU/exec`.
 It shows live Google Calendar times and shared booking counts. If Google does
-not load the embedded calendar, the site hides the error after 12 seconds and
-shows the free-demo request form. The direct booking link remains available;
+not load the embedded calendar, the site hides the iframe error and after 8
+seconds shows the free-demo request form. The direct booking link remains available;
 If the direct link also fails, check the Apps Script deployment and try a
 fresh web-app deployment before replacing the website link.
 
