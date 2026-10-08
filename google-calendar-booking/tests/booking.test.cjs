@@ -157,3 +157,30 @@ test('online and in-person bookings share the same three seats and other busy ev
   assert.equal(context.getSessions('').length, 0);
   assert.throws(() => context.bookSession(tokens[3], slots[0].id, 'online'), /no longer available/);
 });
+
+test('public availability endpoint returns only times and shared seat counts', () => {
+  const context = {
+    ContentService: {
+      MimeType: { JAVASCRIPT: 'javascript' },
+      createTextOutput: content => ({ content, setMimeType(mimeType) { this.mimeType = mimeType; return this; } }),
+    },
+    Date, Number, String, JSON, RegExp, Error, Boolean, Array,
+  };
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Code.gs'), 'utf8'), context);
+  context.getSessions = () => [{
+    id: 'private-calendar-event-id', format: 'online',
+    start: '2026-10-09T11:00:00.000Z', end: '2026-10-09T11:30:00.000Z',
+    spotsLeft: 2, bookedByMe: true, bookingFormat: 'online',
+    location: 'private-studio-location', email: 'customer@example.com',
+  }];
+  const output = context.doGet({ parameter: {
+    mode: 'availability', callback: 'mmblAvailability_test_1',
+    from: '2026-10-09T00:00:00.000Z', until: '2026-10-16T00:00:00.000Z',
+  } });
+  assert.equal(output.mimeType, 'javascript');
+  assert.deepEqual(JSON.parse(output.content.slice('mmblAvailability_test_1('.length, -2)), {
+    slots: [{ format: 'online', start: '2026-10-09T11:00:00.000Z', end: '2026-10-09T11:30:00.000Z', spotsLeft: 2 }],
+  });
+  assert.throws(() => context.doGet({ parameter: { mode: 'availability', callback: 'alert' } }), /Invalid availability callback/);
+});

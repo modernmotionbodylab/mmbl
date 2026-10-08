@@ -98,14 +98,16 @@ be retired.
 
 ## Google Calendar booking (no database)
 
-The website’s Schedule section embeds the live Google Apps Script booking web
-app at
+The website’s Schedule section reads public, read-only availability from the
+Google Apps Script booking web app at
 `https://script.google.com/macros/s/AKfycbzzmHjsM-oIT71qpoAm0HyhxjuFmcRRtObqQQremKN5tr01LjZUYajKQXHeAWbin9OU/exec`.
-It shows live Google Calendar times and shared booking counts. If Google does
-not load the embedded calendar, the site hides the iframe error and after 8
-seconds shows the free-demo request form. The direct booking link remains available;
-If the direct link also fails, check the Apps Script deployment and try a
-fresh web-app deployment before replacing the website link.
+It shows Google Calendar times and shared booking counts directly on the
+website. Customers open the full booking page to reserve or cancel a spot.
+The on-site view uses Apps Script's read-only JavaScript availability response,
+which avoids the Google Drive error seen when embedding the booking page in an
+iframe. If the availability response fails, the site shows the free-demo
+request form and a copyable booking link. The website does not display
+customer identities or private event details.
 
 The free demo calendar uses the Google Calendar for
 `modernmotionbodylab@gmail.com` as its only persistent booking store. Create a
@@ -132,8 +134,8 @@ availability.
    Replace its `Code.gs` contents with the latest `google-calendar-booking/Code.gs`,
    add an Apps Script HTML file named `Index` containing
    `google-calendar-booking/Index.html`, and add an Apps Script script file named
-   `Schedule` containing `google-calendar-booking/Schedule.gs`. The Apps Script
-   local `Index.html` file in a browser does not add it to the project.
+   `Schedule` containing `google-calendar-booking/Schedule.gs`. Opening the local
+   `Index.html` file in a browser does not add it to the Apps Script project.
 2. In **Project Settings → Script properties**, set `CALENDAR_ID` to
    `modernmotionbodylab@gmail.com`. The script uses that address by default,
    so this property is optional for the primary calendar. In **Project
@@ -150,7 +152,12 @@ availability.
    access for visitors. Authorize Calendar and email access. Before publishing
    the booking URL, create a test demo event and verify a booking and
    cancellation with an email address you control.
-5. When changing Apps Script files, deploy a **new version** of the existing
+5. The on-site availability view requires the `doGet(request)` availability
+   branch at the top of the current `google-calendar-booking/Code.gs`. After
+   updating that file in the Apps Script editor, deploy a **new version** of
+   the existing public web app. Until then, the on-site calendar will show its
+   fallback request form; the direct booking page continues to work.
+6. When changing Apps Script files, deploy a **new version** of the existing
    public web app and keep its URL in `appsScriptUrl` in
    `src/app/workout-scheduler/booking-calendar.config.ts`. Rebuild and deploy
    the Angular website if the URL changes. Test three bookings at one time, a rejected fourth

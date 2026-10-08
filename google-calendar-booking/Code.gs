@@ -7,7 +7,24 @@ var SEAT_KEYS = ['mmbl-seat-1', 'mmbl-seat-2', 'mmbl-seat-3'];
 var FORMAT_KEYS = ['mmbl-format-1', 'mmbl-format-2', 'mmbl-format-3'];
 var BOOKING_NOTE = /(?:\n\n)?\[MMBL bookings\][\s\S]*?\[\/MMBL bookings\]/g;
 
-function doGet() {
+function doGet(request) {
+  if (request && request.parameter && request.parameter.mode === 'availability') {
+    var callback = String(request.parameter.callback || '');
+    if (!/^mmblAvailability_[A-Za-z0-9_]{1,40}$/.test(callback))
+      throw new Error('Invalid availability callback.');
+    var result;
+    try {
+      result = { slots: getSessions('', request.parameter.from, request.parameter.until)
+        .map(function(slot) { return {
+          format: slot.format, start: slot.start, end: slot.end,
+          spotsLeft: slot.spotsLeft
+        }; }) };
+    } catch (error) {
+      result = { error: 'Live availability is temporarily unavailable.' };
+    }
+    return ContentService.createTextOutput(callback + '(' + JSON.stringify(result) + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
   return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('Modern Motion Body Lab — Book a free demo')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
