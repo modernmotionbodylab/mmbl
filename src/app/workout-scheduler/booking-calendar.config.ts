@@ -1,8 +1,5 @@
-// Add the public URL of the 30-minute, three-seat Cal.com demo event here.
-// Example: https://cal.com/your-username/free-demo
-// Keep blank until the event and Google Calendar connection are ready.
 export const bookingCalendarConfig = {
-  calEventUrl: '',
+  calEventUrl: 'https://cal.com/modernmotionbodylab/free-demo',
 };
 
 export function calEventPath(value: string): string | null {

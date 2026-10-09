@@ -2,7 +2,12 @@ import { AfterViewInit, Component, ElementRef, EventEmitter, OnDestroy, Output, 
 import { bookingCalendarConfig, calEventPath } from './booking-calendar.config';
 
 type EmbedStatus = 'loading' | 'ready' | 'error';
-type CalFunction = (command: string, ...args: unknown[]) => void;
+type CalFunction = ((...args: unknown[]) => void) & {
+  loaded?: boolean;
+  q?: unknown[][];
+  ns?: Record<string, CalFunction>;
+  config?: Record<string, unknown>;
+};
 type CalWindow = Window & { Cal?: CalFunction & { ns?: Record<string, CalFunction> } };
 
 @Component({
@@ -35,22 +40,44 @@ export class BookingCalendarComponent implements AfterViewInit, OnDestroy {
     });
     this.observer.observe(host, { childList: true, subtree: true });
 
-    const script = document.createElement('script');
-    script.src = 'https://app.cal.com/embed/embed.js';
-    script.async = true;
-    script.onload = () => {
-      const cal = (window as CalWindow).Cal;
-      if (!cal) return this.fail();
-      cal('init', 'mmbl-demo', { origin: 'https://cal.com' });
-      const widget = cal.ns?.['mmbl-demo'];
-      if (!widget) return this.fail();
-      widget('inline', { elementOrSelector: '#mmbl-cal-inline', calLink: this.eventPath, layout: 'month_view' });
-      widget('ui', { styles: { branding: { brandColor: '#16645e' } }, layout: 'month_view' });
-    };
-    script.onerror = () => this.fail();
-    this.embedScript = script;
     this.loadTimer = setTimeout(() => this.fail(), 15000);
-    document.head.append(script);
+
+    // Cal.com's embed expects this queue to exist before embed.js is loaded.
+    const bootstrap = ((...args: unknown[]) => {
+      if (!bootstrap.loaded) {
+        bootstrap.ns = {};
+        bootstrap.q = [];
+        const script = document.createElement('script');
+        script.src = 'https://app.cal.com/embed/embed.js';
+        script.async = true;
+        script.onerror = () => this.fail();
+        this.embedScript = script;
+        document.head.append(script);
+        bootstrap.loaded = true;
+      }
+      if (args[0] === 'init' && typeof args[1] === 'string') {
+        const namespace = args[1];
+        const widget = ((...queued: unknown[]) => widget.q?.push(queued)) as CalFunction;
+        widget.q = [];
+        bootstrap.ns![namespace] ||= widget;
+        bootstrap.ns![namespace].q?.push(args);
+        bootstrap.q!.push(['initNamespace', namespace]);
+        return;
+      }
+      bootstrap.q!.push(args);
+    }) as CalFunction;
+
+    const calWindow = window as CalWindow;
+    const cal = calWindow.Cal ||= bootstrap;
+    cal('init', 'mmbl-demo', { origin: 'https://app.cal.com' });
+    cal.config = { ...cal.config, forwardQueryParams: true };
+    const widget = cal.ns?.['mmbl-demo'];
+    if (!widget) return this.fail();
+    widget('inline', {
+      elementOrSelector: '#mmbl-cal-inline', calLink: this.eventPath,
+      config: { layout: 'month_view', useSlotsViewOnSmallScreen: 'true', theme: 'light' }
+    });
+    widget('ui', { theme: 'light', styles: { branding: { brandColor: '#16645e' } }, layout: 'month_view' });
   }
 
   ngOnDestroy() {

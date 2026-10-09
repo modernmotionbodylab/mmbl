@@ -33,7 +33,7 @@ Stop this foreground dev server with Ctrl+C. Do not run both servers on port 420
 
 ## Source structure
 
-- `src/app/app.component.html`: page, phone/address placeholders, and enquiry form.
+- `src/app/app.component.html`: page, phone contact, and enquiry form.
 - `src/app/app.component.ts`: Angular form validation and submission behavior.
 - `src/app/contact.config.ts`: public recipient and FormSubmit endpoint.
 - `src/styles.css`: responsive design.
@@ -41,7 +41,7 @@ Stop this foreground dev server with Ctrl+C. Do not run both servers on port 420
 - `scripts/`: local environment setup and preview server.
 - `build/modern-motion/browser/`: generated production output (ignored by Git).
 
-Phone: (281) 703-9810. Instagram, YouTube, Threads, TikTok, and Facebook link to the supplied profiles. Studio address and Snapchat remain placeholders.
+Phone: (281) 703-9810. Instagram, YouTube, Threads, TikTok, and Facebook link to the supplied profiles. Snapchat remains a placeholder.
 
 ## Enquiry emails
 
@@ -98,32 +98,22 @@ be retired.
 
 ## Free demo booking
 
-The Schedule section is prepared for a Cal.com booking page. Until the Cal.com
-account and event are ready, it shows an honest connection notice and the
-existing email request form. The former Google Apps Script booking files in
-`google-calendar-booking/` are kept for reference but are no longer used by
-the website.
+The Schedule section uses the public Cal.com event
+`https://cal.com/modernmotionbodylab/free-demo`. It has a 30-minute duration,
+three shared seats, and a required online/in-person booking question. Cal.com
+supports three seats only with one meeting location for this event, so Google
+Meet is the event location; the organizer coordinates in-person arrangements
+privately. No address is displayed on the website. Attendee information is
+not shared among bookers.
 
-To activate online booking:
-
-1. Create a Cal.com account using `modernmotionbodylab@gmail.com` and connect
-   that Google Calendar. Set the calendar used for new bookings to this account.
-2. Create **one** event called “Free demo” with a **30-minute** duration and
-   **three seats** (“Offer Seats”). One event is essential: online and in-person
-   visitors must share the same three seats. Add both an online option, such as
-   Google Meet, and an in-person location so the visitor can choose the format.
-   Keep attendee details private from other visitors.
-3. Set the availability timezone to **America/Chicago**. Monday–Friday starts
-   are 5, 6, 7, and 8 AM and 5, 6, 7, and 8 PM. Saturday starts are every 30
-   minutes from 5–9:30 AM and 5–8:30 PM. Sunday is unavailable. Cal.com may
-   need separate availability windows or date overrides to express these exact
-   starts; verify the public booking page before publishing.
-4. Put the public event URL, for example
-   `https://cal.com/your-username/free-demo`, in `calEventUrl` in
-   `src/app/workout-scheduler/booking-calendar.config.ts`. Rebuild, sync the
-   GitHub Pages root files, and publish. The site then displays Cal.com's
-   inline booking calendar. If it fails to load, visitors can open the direct
-   booking page or use the email request form.
+The event uses `modernmotionbodylab@gmail.com` to add bookings and check for
+conflicts. Its availability timezone is **America/Chicago**. Monday–Friday
+starts are 5, 6, 7, and 8 AM and 5, 6, 7, and 8 PM. Saturday starts are every
+30 minutes from 5–9:30 AM and 5–8:30 PM. Sunday is unavailable. If the inline
+calendar fails, visitors can open the direct page or use the email request
+form. The former Google Apps Script booking files in `google-calendar-booking/`
+are kept for reference but are no longer used by the website. Its `Migration.gs`
+removes only the old recurring demo holds after checking for future bookings.
 
 The free demo requires no payment or subscription. Cal.com manages the three
 seats and syncs bookings with the connected Google Calendar; no separate
