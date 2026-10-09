@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { BookingCalendarComponent } from './booking-calendar.component';
-import { bookingCalendarConfig } from './booking-calendar.config';
+import { bookingCalendarConfig, calEventPath } from './booking-calendar.config';
 import { FormsModule, NgForm } from '@angular/forms';
 import { contactConfig } from '../contact.config';
 
@@ -9,7 +9,7 @@ import { contactConfig } from '../contact.config';
   templateUrl: './workout-scheduler.component.html', styleUrl: './workout-scheduler.component.css'
 })
 export class WorkoutSchedulerComponent {
-  calendarConnected = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(bookingCalendarConfig.appsScriptUrl);
+  calendarConnected = Boolean(calEventPath(bookingCalendarConfig.calEventUrl));
   calendarUnavailable = signal(false);
   model = { format: '', date: '', time: '', name: '', email: '', phone: '', notes: '', website: '' };
   timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;

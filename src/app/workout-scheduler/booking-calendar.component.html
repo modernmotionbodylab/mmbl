@@ -1,56 +1,21 @@
 <div class="calendar-wrap" aria-labelledby="calendar-heading">
   <div class="calendar-head">
     <div>
-      <p class="eyebrow">LIVE FREE DEMO TIMES</p>
+      <p class="eyebrow">FREE DEMO BOOKING</p>
       <h3 id="calendar-heading">Choose your time.</h3>
-      <p>Each demo lasts 30 minutes. Online and in-person visitors share three spots at each time.</p>
+      <p>30 minutes to get moving. Online and in-person visitors share up to three spots at each time.</p>
     </div>
     <span class="capacity-badge">UP TO 3 PEOPLE</span>
   </div>
 
   @if (configured) {
-    <div class="calendar-toolbar">
-      <div class="calendar-tabs" role="group" aria-label="Training type">
-        <button type="button" [class.active]="format() === 'in_person'" (click)="format.set('in_person')">In person</button>
-        <button type="button" [class.active]="format() === 'online'" (click)="format.set('online')">Online</button>
-      </div>
-      <div class="calendar-navigation">
-        <button type="button" aria-label="Previous week" [disabled]="week() === 0" (click)="changeWeek(-1)">←</button>
-        <strong>{{ weekLabel() }}</strong>
-        <button type="button" aria-label="Next week" [disabled]="week() === 12" (click)="changeWeek(1)">→</button>
-        <button type="button" (click)="refresh()">Refresh</button>
-      </div>
-    </div>
-    @if (status() === 'loading') {
-      <p class="calendar-status" role="status">Checking live availability…</p>
-    } @else if (status() === 'error') {
-      <div class="calendar-preview-warning" role="status"><strong>Live times are temporarily unavailable here</strong><p>Open the full booking calendar or send a preferred time using the request form below. We’ll confirm it by email.</p></div>
-    } @else {
-      <p class="calendar-timezone">Times shown in your local timezone: {{ timezone }}.</p>
-      <div class="calendar-days" aria-live="polite">
-        @for (day of days(); track day.key) {
-          <section class="calendar-day">
-            <h4>{{ day.label }}</h4>
-            @for (slot of visibleSlots(day.key); track slot.start) {
-              <div class="calendar-slot" [class.full]="slot.spotsLeft === 0">
-                <strong>{{ timeLabel(slot.start) }} – {{ timeLabel(slot.end) }}</strong>
-                <span>{{ 3 - slot.spotsLeft }}/3 booked</span>
-                <small>{{ slot.spotsLeft === 0 ? 'Full' : slot.spotsLeft + ' spots open' }}</small>
-              </div>
-            } @empty {
-              <p class="calendar-empty">No open demos</p>
-            }
-          </section>
-        }
-      </div>
-      <p class="calendar-timezone">Availability refreshes automatically. Reserve your spot on the full booking calendar.</p>
+    @if (status() === 'loading') { <p class="calendar-status" role="status">Loading the booking calendar…</p> }
+    @if (status() === 'error') {
+      <div class="calendar-preview-warning" role="status"><strong>The booking calendar is unavailable right now.</strong><p>Request a preferred time using the form below and we’ll confirm by email.</p></div>
     }
-    <div class="calendar-actions">
-      <a class="calendar-open-link" [href]="bookingCalendarUrl" rel="noreferrer">Go to full booking calendar →</a>
-      <button class="calendar-copy-link" type="button" (click)="copyLink()">{{ linkCopied() ? 'Link copied' : 'Copy booking link' }}</button>
-    </div>
-    <p class="calendar-timezone">If Google shows an error after clicking, copy the booking link and paste it into your browser’s address bar.</p>
+    <div #calHost id="mmbl-cal-inline" class="cal-embed" [hidden]="status() === 'error'"></div>
+    <p class="calendar-help">If the calendar does not display, <a [href]="bookingUrl" target="_blank" rel="noopener noreferrer">open the booking page in a new tab ↗</a>.</p>
   } @else {
-    <div class="calendar-preview-warning"><strong>Live availability is not connected yet</strong><p>Request a free demo using the form below; we’ll confirm it by email.</p></div>
+    <div class="calendar-preview-warning"><strong>Online booking is being connected.</strong><p>For now, request a free demo using the form below. We’ll confirm your time by email.</p></div>
   }
 </div>

@@ -96,80 +96,37 @@ Commit the generated root files with the source changes. If GitHub Pages is
 later switched to **GitHub Actions** as its sole source, these root copies can
 be retired.
 
-## Google Calendar booking (no database)
+## Free demo booking
 
-The website’s Schedule section reads public, read-only availability from the
-Google Apps Script booking web app at
-`https://script.google.com/macros/s/AKfycbzzmHjsM-oIT71qpoAm0HyhxjuFmcRRtObqQQremKN5tr01LjZUYajKQXHeAWbin9OU/exec`.
-It shows Google Calendar times and shared booking counts directly on the
-website. Customers open the full booking page to reserve or cancel a spot.
-The on-site view uses Apps Script's read-only JavaScript availability response,
-which avoids the Google Drive error seen when embedding the booking page in an
-iframe. If the availability response fails, the site shows the free-demo
-request form and a copyable booking link. The website does not display
-customer identities or private event details.
+The Schedule section is prepared for a Cal.com booking page. Until the Cal.com
+account and event are ready, it shows an honest connection notice and the
+existing email request form. The former Google Apps Script booking files in
+`google-calendar-booking/` are kept for reference but are no longer used by
+the website.
 
-The free demo calendar uses the Google Calendar for
-`modernmotionbodylab@gmail.com` as its only persistent booking store. Create a
-30-minute event whose title begins `[MMBL Demo] Online or in person`;
-it appears in both booking tabs with **three shared spots**. Back-to-back demos are
-allowed. Other busy events on the same Google Calendar hide conflicting demo
-times. The Apps Script reads only marked demo events and stores up to three
-verified customer emails as event tags. A script lock serializes bookings, so
-a fourth person cannot reserve the same demo. A visitor may hold one upcoming
-demo booking at a time and may cancel it to choose another time. The event
-description shows the booked count. Deleting an event from Google Calendar
-removes it from the website on the next refresh (every 30 seconds). Unmarked
-personal events do not appear on the website.
+To activate online booking:
 
-The booking script emails a six-digit sign-in code to the customer. No
-subscription, payment, Stripe key, or external database is required to reserve
-a free demo. Customer names and email addresses are never shown in public
-availability.
+1. Create a Cal.com account using `modernmotionbodylab@gmail.com` and connect
+   that Google Calendar. Set the calendar used for new bookings to this account.
+2. Create **one** event called “Free demo” with a **30-minute** duration and
+   **three seats** (“Offer Seats”). One event is essential: online and in-person
+   visitors must share the same three seats. Add both an online option, such as
+   Google Meet, and an in-person location so the visitor can choose the format.
+   Keep attendee details private from other visitors.
+3. Set the availability timezone to **America/Chicago**. Monday–Friday starts
+   are 5, 6, 7, and 8 AM and 5, 6, 7, and 8 PM. Saturday starts are every 30
+   minutes from 5–9:30 AM and 5–8:30 PM. Sunday is unavailable. Cal.com may
+   need separate availability windows or date overrides to express these exact
+   starts; verify the public booking page before publishing.
+4. Put the public event URL, for example
+   `https://cal.com/your-username/free-demo`, in `calEventUrl` in
+   `src/app/workout-scheduler/booking-calendar.config.ts`. Rebuild, sync the
+   GitHub Pages root files, and publish. The site then displays Cal.com's
+   inline booking calendar. If it fails to load, visitors can open the direct
+   booking page or use the email request form.
 
-### Maintain live booking
-
-1. Sign in as `modernmotionbodylab@gmail.com` and open the existing
-   [Modern Motion Body Lab Booking Apps Script project](https://script.google.com/home/projects/1J_--yfJxuYyeEKQOJiRyMyOBFjG9XJbw2ZQy_qTVA7vW-Drye93UbkPk/edit).
-   Replace its `Code.gs` contents with the latest `google-calendar-booking/Code.gs`,
-   add an Apps Script HTML file named `Index` containing
-   `google-calendar-booking/Index.html`, and add an Apps Script script file named
-   `Schedule` containing `google-calendar-booking/Schedule.gs`. Opening the local
-   `Index.html` file in a browser does not add it to the Apps Script project.
-2. In **Project Settings → Script properties**, set `CALENDAR_ID` to
-   `modernmotionbodylab@gmail.com`. The script uses that address by default,
-   so this property is optional for the primary calendar. In **Project
-   Settings**, set the project time zone to **America/Chicago**.
-3. Run `installDemoSchedule` once in the Apps Script editor and approve Google
-   Calendar access. It creates 26 recurring event series: weekday starts at
-   5, 6, 7, and 8 AM and 5, 6, 7, and 8 PM; Saturday starts every 30 minutes
-   from 5–9:30 AM and 5–8:30 PM. There are 58 demo starts per week, each
-   lasting 30 minutes, with no Sunday slots. Online and in-person customers
-   share the three spots in each event. Running the setup again does not create
-   duplicate series. Delete a single occurrence in Google Calendar to remove
-   only that time; delete the series to remove all recurring times.
-4. Deploy the project as a **Web app**, executing as the calendar owner, with
-   access for visitors. Authorize Calendar and email access. Before publishing
-   the booking URL, create a test demo event and verify a booking and
-   cancellation with an email address you control.
-5. The on-site availability view requires the `doGet(request)` availability
-   branch at the top of the current `google-calendar-booking/Code.gs`. After
-   updating that file in the Apps Script editor, deploy a **new version** of
-   the existing public web app. Until then, the on-site calendar will show its
-   fallback request form; the direct booking page continues to work.
-6. When changing Apps Script files, deploy a **new version** of the existing
-   public web app and keep its URL in `appsScriptUrl` in
-   `src/app/workout-scheduler/booking-calendar.config.ts`. Rebuild and deploy
-   the Angular website if the URL changes. Test three bookings at one time, a rejected fourth
-   booking, cancellation, and deletion of a Google Calendar event.
-
-Google Calendar stores the booking seats; no Supabase project or database is
-needed. Google Apps Script's temporary cache holds short-lived sign-in codes
-and browser sessions. Deleting a booked demo removes it from the website, but
-this version does **not** email affected customers automatically. Contact them
-to reschedule if needed.
-
-The Apps Script deployment must run as the calendar owner and allow **Anyone**
-to access the web app. Customers use one-time email codes; no customer is given
-direct access to the Google Calendar. Changes saved in the Apps Script editor
-do not reach the public `/exec` URL until a new deployment version is selected.
+The free demo requires no payment or subscription. Cal.com manages the three
+seats and syncs bookings with the connected Google Calendar; no separate
+database is maintained in this website. Test three bookings at the same time,
+a rejected fourth booking, cancellation, and a Google Calendar conflict before
+relying on the calendar for customers.
